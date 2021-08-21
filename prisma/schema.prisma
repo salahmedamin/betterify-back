@@ -1,0 +1,758 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model user {
+  id                            Int                           @id @default(autoincrement())
+  username                      String                        @unique
+  password                      String
+  profilePic                    String
+  firstName                     String
+  lastName                      String
+  //FOLLOW
+  follows                       user_to_user_follows[]        @relation("Follower")
+  followedBy                    user_to_user_follows[]        @relation("Followed")
+  //VISITING PROFILES
+  profileVisits                 user_to_user_profile_visits[] @relation("profileVisits")
+  profileVisited                user_to_user_profile_visits[] @relation("profileVisited")
+  //BLOCKING
+  blocked                       user_to_user_blockings[]      @relation("blocker")
+  blockedBy                     user_to_user_blockings[]      @relation("blocked")
+  //REACTIONS (MESSAGES/COMMENTS/POSTS)
+  reactions                     reaction[]
+  //MESSAGES
+  messagesSent                  message[]                     @relation("MessagingOutgoing")
+  messagesReceived              message[]                     @relation("MessagingIncoming")
+  textTaggedIn                  person_tagging_in_text[]
+  // #GROUPS
+  created_groups                groups[]                      @relation("creator")
+  added_members_to_groups       groups_join_requests[]        @relation("adder")
+  added_by_members_to_groups    groups_join_requests[]        @relation("added")
+  namer_in_convos               messages_nicknames[]          @relation("namer")
+  named_in_convos               messages_nicknames[]          @relation("named")
+  // GROUPS #ROLES
+  roles_in_groups               groups_roles[]
+  // GROUPS (MESSAGES OR NOT) : admins accepting or deleting join requests
+  accepted_groups_join_requests groups_join_requests[]        @relation("accepted_invite")
+  deleted_groups_join_requests  groups_join_requests[]        @relation("deleted_invite")
+  //MESSAGES #CONVERSATION - DELETION / MUTING
+  chatLists                     chat_list[]                   @relation("ownChatList")
+  chatListUserIsIn              chat_list[]                   @relation("chatListContact")
+  //POSTS
+  posts                         post[]
+  //COMMENTS
+  comments                      comment[]
+  //ACTIVITY LOG
+  activities                    user_activity[]               @relation("activity_owner")
+  activities_with               user_activity[]               @relation("activity_interacted_with")
+  //TAGS TO RECOMMEND BASED ON
+  preferred_tags                tags_preferences[]
+  //CONNECTED
+  lastOnline                    BigInt?                       @db.BigInt
+  //WHEN TAGGED IN A PHOTO
+  photos_tagging_user           faces_in_photos[]
+  //BIO
+  bios                          user_bio[]
+  //HOBBIES
+  hobby                         user_hobbies[]
+  //SEX
+  sex                           sexes
+  //BIRTHDATE
+  birthDate                     BigInt                        @db.BigInt
+  //DATE JOINED
+  created_at                    DateTime                      @default(now())
+  //PREFERRED THEME
+  theme_color                   themes
+  //PROFILE THEME
+  profile_theme                 String                        @default("")
+  //POSTS IN WHICH THIS USER IS TAGGED DOING SOMETHING
+  activities_tagged_in          activity[]
+  //NOTIFICATIONS
+  notifications                 notification_list?
+  created_notifications         single_notification[]
+  //Muting others and being muted
+  muter                         muting[]                      @relation("muter")
+
+  postsVisibleTo   post[] @relation("users_visibility")
+  postsAlreadySeen post[] @relation("posts_already_seen")
+}
+
+model notification_list {
+  id            Int                   @id @default(autoincrement())
+  user          user                  @relation(fields: [userID], references: [id])
+  userID        Int
+  notifications single_notification[]
+}
+
+enum notif_type {
+  ///////follow
+  follow_plus
+  follow_minus
+
+  ///////profile visits
+  profilevisited
+
+  ///////post
+
+  //my post
+  mypost_react
+  mypost_comment
+  mypost_shared
+
+  //other posts
+  post_comment
+  post_taggedme
+
+
+
+  ///////comment
+
+  //my comment
+  mycomment_react
+  mycomment_reply
+
+  //other comments
+  comment_taggedme
+  comment_onfollowing
+
+
+
+  ///////reply
+
+  //my reply
+  myreply_react
+
+  //other replies
+  reply_taggedme
+
+
+
+  ///////group
+
+  //group invite
+  group_invite_received
+
+  //group join request
+  group_joinrequest_received
+  group_joinrequest_accepted
+  group_joinrequest_rejected
+
+  //group kicked out
+  group_quit_forced //meaning you were kicked out
+
+  //group quit
+  group_quit_user
+
+  //my group post
+  group_mypost_react
+  group_mypost_comment
+  group_mypost_shared
+
+  //other group post
+  group_post_new
+  group_post_taggedme
+
+  //group roles
+  group_role_set
+  group_role_unset
+}
+
+model single_notification {
+  id                   Int                   @id @default(autoincrement())
+  list                 notification_list     @relation(fields: [listID], references: [id])
+  listID               Int
+  type                 notif_type
+  fromPerson           user?                 @relation(fields: [userID], references: [id])
+  userID               Int?
+  fromGroup            groups?               @relation(fields: [groupID], references: [id])
+  groupID              Int?
+  fromPost             post?                 @relation(fields: [postID], references: [id])
+  postID               Int?
+  fromGroupJoinRequest groups_join_requests? @relation(fields: [groupJoinReqID], references: [id])
+  groupJoinReqID       Int?
+  fromComment          comment?              @relation(fields: [commentID], references: [id])
+  commentID            Int?
+  isSeen               Boolean               @default(false)
+  text                 String
+  redirectTo           String
+}
+
+model tags_preferences {
+  id     Int   @id @default(autoincrement())
+  tag    tag   @relation(fields: [tagID], references: [id])
+  tagID  Int
+  user   user  @relation(fields: [userID], references: [id])
+  userID Int
+  score  Float
+
+  @@unique([tagID, userID])
+}
+
+enum themes {
+  light
+  dark
+}
+
+model user_hobbies {
+  id    Int    @id @default(autoincrement())
+  users user[]
+  hobby String
+}
+
+enum sexes {
+  male
+  female
+  other
+}
+
+enum ages {
+  lt_18
+  btwn_18_29
+  btwn_30_45
+  betwn_46_60
+  gt_60
+}
+
+model user_bio {
+  id     Int    @id @default(autoincrement())
+  user   user?  @relation(fields: [userID], references: [id])
+  userID Int
+  bio    String
+  sex    sexes?
+  age    ages?
+
+  @@unique([sex, age, userID])
+}
+
+model user_to_user_blockings {
+  id         Int      @id @default(autoincrement())
+  blocker    user     @relation("blocker", fields: [blockerID], references: [id])
+  blockerID  Int
+  blocked    user     @relation("blocked", fields: [blockedID], references: [id])
+  blockedID  Int
+  created_at DateTime @default(now())
+
+  @@unique([blockerID, blockedID])
+}
+
+model user_to_user_follows {
+  id               Int       @id @default(autoincrement())
+  follower         user      @relation("Follower", fields: [followerID], references: [id])
+  followerID       Int
+  followed         user      @relation("Followed", fields: [followedID], references: [id])
+  followedID       Int
+  isPending        Boolean   @default(true)
+  isDeleted        Boolean   @default(false)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime?
+  isFromSuggestion Boolean   @default(false)
+
+  @@unique([followerID, followedID])
+}
+
+model user_to_user_profile_visits {
+  id         Int       @id @default(autoincrement())
+  visiter    user      @relation("profileVisits", fields: [visitorID], references: [id])
+  visitorID  Int
+  visited    user      @relation("profileVisited", fields: [visitedID], references: [id])
+  visitedID  Int
+  created_at DateTime  @default(now())
+  updated_at DateTime?
+
+  @@unique([visitorID, visitedID])
+}
+
+//ACTIVITIES
+
+enum activities {
+  //follow
+  user_follow
+  user_unfollow
+  user_visit
+  //story reply
+  user_story_reply
+  user_story_react
+  //keeping away
+  user_block
+  user_unblock
+  user_story_mute
+  user_story_unmute
+  //groups (not chat)
+  group_add
+  group_delete
+  group_join
+  group_quit
+  group_add_member
+  group_delete_member
+  group_set_role
+  group_accept_join_request
+  group_delete_join_request
+  //group (chat)
+  group_chat_add
+  group_chat_delete
+  group_chat_quit
+  group_chat_add_member
+  group_chat_delete_member
+  group_chat_nickname
+  group_chat_set_role
+  //posts
+  post_add
+  post_react
+  //commments
+  comment_add
+  comment_edit
+  comment_delete
+  comment_react
+  //commment replies
+  comment_reply_add
+  comment_reply_edit
+  comment_reply_delete
+  comment_reply_react
+  //conversations with users/groups
+  conversation_delete
+  conversation_mute
+  conversation_start
+  //search
+  search_all
+  search_users
+  search_groups
+  search_posts
+}
+
+model user_activity {
+  id            Int         @id @default(autoincrement())
+  user          user        @relation("activity_owner", fields: [userID], references: [id])
+  userID        Int
+  activity      activities?
+  other_user    user?       @relation("activity_interacted_with", fields: [otherID], references: [id])
+  otherID       Int?
+  group         groups?     @relation(fields: [groupId], references: [id])
+  groupId       Int?
+  post          post?       @relation(fields: [postId], references: [id])
+  postId        Int?
+  comment       comment?    @relation(fields: [commentId], references: [id])
+  commentId     Int?
+  searchKeyword String?
+  created_at    DateTime    @default(now())
+}
+
+//MESSAGES
+
+model message {
+  id                 Int                     @id @default(autoincrement())
+  created_at         DateTime                @default(now())
+  sender             user                    @relation("MessagingOutgoing", fields: [senderID], references: [id])
+  senderID           Int
+  receiver           user?                   @relation("MessagingIncoming", fields: [receiverID], references: [id])
+  receiverID         Int?
+  group              groups?                 @relation(fields: [groupID], references: [id])
+  groupID            Int?
+  content            String?
+  //Shared from post
+  isFromPost         Boolean                 @default(false)
+  post               post?                   @relation(fields: [postID], references: [id])
+  postID             Int?
+  //Deleted for sender
+  isDeleted          Boolean                 @default(false)
+  //Be shown as a system message
+  isHint             Boolean                 @default(false)
+  //Reply to message
+  isReply            Boolean                 @default(false)
+  replyToID          message?                @relation("reply", fields: [originalID], references: [id])
+  originalID         Int?
+  message            message[]               @relation("reply")
+  //Multimedia
+  hasURL             Boolean                 @default(false)
+  hasImage           Boolean                 @default(false)
+  hasFile            Boolean                 @default(false)
+  hasVideo           Boolean                 @default(false)
+  isVocal            Boolean                 @default(false)
+  hasEdits           Boolean                 @default(false)
+  message_multimedia multimedia[]
+  //URLs
+  urls               urls[]
+  //Reaction
+  message_reacts     reaction[]
+  //Person Tagging
+  hasTaggedPerson    Boolean                 @default(false)
+  personsTagged      person_tagging_in_text?
+  //Editing a message
+  edits              edits[]
+  //Link to chat list
+  chatList           chat_list[]
+}
+
+model person_tagging_in_text {
+  id        Int      @id @default(autoincrement())
+  message   message? @relation(fields: [messageID], references: [id])
+  messageID Int?
+  post      post?    @relation(fields: [postID], references: [id])
+  postID    Int?
+  comment   comment? @relation(fields: [commentID], references: [id])
+  commentID Int?
+  tagged    user[]
+}
+
+model chat_list {
+  id           Int                  @id @default(autoincrement())
+  owner        user                 @relation("ownChatList", fields: [ownerID], references: [id])
+  ownerID      Int
+  other        user?                @relation("chatListContact", fields: [otherID], references: [id])
+  otherID      Int?
+  group        groups?              @relation(fields: [groupID], references: [id])
+  groupID      Int?
+  isUnread     Boolean              @default(false)
+  lastModified DateTime             @updatedAt
+  messages     message[]
+  muting       muting[]
+  nicknames    messages_nicknames[]
+
+  @@unique([ownerID, otherID])
+  @@unique([ownerID, groupID])
+}
+
+model muting {
+  id        Int        @id @default(autoincrement())
+  muter     user       @relation("muter", fields: [muterID], references: [id])
+  muterID   Int
+  chat_list chat_list? @relation(fields: [chatID], references: [id])
+  chatID    Int
+
+  @@unique([muterID, chatID])
+}
+
+model groups {
+  id                          Int                           @id @default(autoincrement())
+  groupName                   String
+  unique                      String                        @unique
+  isPublic                    Boolean                       @default(true)
+  groupPic                    String
+  created_at                  DateTime                      @default(now())
+  creator                     user                          @relation("creator", fields: [creatorID], references: [id])
+  creatorID                   Int
+  members                     groups_join_requests[]
+  nicknames                   messages_nicknames[]
+  messages                    message[]
+  isChatGroup                 Boolean                       @default(false)
+  user_activity               user_activity[]
+  roles                       groups_roles[]
+  posts                       post[]
+  group_rules                 group_rules[]
+  group_strictness_disallowed group_strictness_disallowed[]
+  single_notification         single_notification[]
+  chatListsGroupIsIn          chat_list[]
+
+  @@index([creatorID])
+}
+
+enum taken_actions_against_in_groups {
+  nudity
+  guns
+  crosswords
+}
+
+model group_strictness_disallowed {
+  id      Int                             @id @default(autoincrement())
+  subject taken_actions_against_in_groups
+  group   groups?                         @relation(fields: [groupID], references: [id])
+  groupID Int
+
+  @@unique([groupID, subject])
+}
+
+model group_rules {
+  id          Int    @id @default(autoincrement())
+  group       groups @relation(fields: [groupID], references: [id])
+  groupID     Int
+  rule        String
+  consequence String
+}
+
+enum group_roles {
+  admin
+  moderator
+  reports_analyzer
+}
+
+model groups_roles {
+  id      Int         @id @default(autoincrement())
+  user    user        @relation(fields: [userID], references: [id])
+  userID  Int
+  group   groups      @relation(fields: [groupID], references: [id])
+  groupID Int
+  role    group_roles
+
+  @@unique([userID, groupID])
+}
+
+model groups_join_requests {
+  id                    Int                   @id @default(autoincrement())
+  group                 groups                @relation(fields: [groupID], references: [id])
+  groupID               Int
+  adder                 user?                 @relation("adder", fields: [adderID], references: [id])
+  adderID               Int?
+  member                user                  @relation("added", fields: [memberID], references: [id])
+  memberID              Int
+  created_at            DateTime              @default(now())
+  isInvite              Boolean               @default(false)
+  invitedAcceptedInvite Boolean               @default(false)
+  isPending             Boolean               @default(true)
+  isDeleted             Boolean               @default(false)
+  accepter              user?                 @relation("accepted_invite", fields: [accepterID], references: [id])
+  accepterID            Int?
+  deleter               user?                 @relation("deleted_invite", fields: [deleterID], references: [id])
+  deleterID             Int?
+  created_notifications single_notification[]
+
+  @@unique([groupID, memberID])
+}
+
+model messages_nicknames {
+  id       Int        @id @default(autoincrement())
+  group    groups?    @relation(fields: [groupID], references: [id])
+  groupID  Int?
+  namer    user       @relation("namer", fields: [namerID], references: [id])
+  namerID  Int
+  named    user       @relation("named", fields: [namedID], references: [id])
+  namedID  Int
+  name     String
+  chatList chat_list? @relation(fields: [chatID], references: [id])
+  chatID   Int?
+
+  @@unique([namerID, namedID, groupID])
+}
+
+enum message_multimedia_type {
+  video
+  image
+  audio
+  file
+}
+
+model multimedia {
+  id        Int                     @id @default(autoincrement())
+  unique    String
+  message   message?                @relation(fields: [messageID], references: [id])
+  messageID Int?
+  post      post?                   @relation(fields: [postID], references: [id])
+  postID    Int?
+  comment   comment?                @relation(fields: [commentID], references: [id])
+  commentID Int?
+  type      message_multimedia_type
+  faces     faces_in_photos[]
+  reactions reaction[]
+  tags      tag[]
+}
+
+model faces_in_photos {
+  id           Int         @id @default(autoincrement())
+  top          Float
+  left         Float
+  height       Float
+  width        Float
+  person       user        @relation(fields: [userID], references: [id])
+  userID       Int
+  multimedia   multimedia? @relation(fields: [multimediaId], references: [id])
+  multimediaId Int?
+}
+
+model urls {
+  id        Int      @id @default(autoincrement())
+  URL       String
+  message   message? @relation(fields: [messageID], references: [id])
+  messageID Int?
+  post      post?    @relation(fields: [postID], references: [id])
+  postID    Int?
+  comment   comment? @relation(fields: [commentID], references: [id])
+  commentID Int?
+}
+
+// MESSAGES - POSTS - COMMENTS => REACTIONS
+
+model reaction {
+  id         Int         @id @default(autoincrement())
+  created_at DateTime    @default(now())
+  emoji      String
+  message    message?    @relation(fields: [messageID], references: [id])
+  messageID  Int?
+  post       post?       @relation(fields: [postID], references: [id])
+  postID     Int?
+  comment    comment?    @relation(fields: [commentID], references: [id])
+  commentID  Int?
+  reactor    user        @relation(fields: [reactorID], references: [id])
+  reactorID  Int
+  media      multimedia? @relation(fields: [mediaID], references: [id])
+  mediaID    Int?
+
+  @@unique([reactorID, commentID])
+  @@unique([reactorID, messageID])
+  @@unique([reactorID, postID])
+}
+
+//POSTS
+model post {
+  id                       Int                     @id @default(autoincrement())
+  created_at               DateTime                @default(now())
+  owner                    user                    @relation(fields: [ownerID], references: [id])
+  ownerID                  Int
+  group                    groups?                 @relation(fields: [groupID], references: [id])
+  groupID                  Int?
+  content                  String?
+  reactions                reaction[]
+  isShared                 Boolean                 @default(false)
+  originalPost             post?                   @relation("OriginalSharedPost", fields: [originalID], references: [id])
+  originalID               Int?
+  sharedPost               post?                   @relation("OriginalSharedPost")
+  sent_in_message          message[]
+  privacyType              post_privacy_type?
+  onlyFollowers            Boolean                 @default(false)
+  onlyFollowersAndFollowed Boolean                 @default(false)
+  usersThatCanSee          user[]                  @relation("users_visibility")
+  tagged_persons           person_tagging_in_text?
+  edits                    edits[]
+  tags                     tag[]
+  comments                 comment[]
+  //Person Tagging
+  hasTaggedPerson          Boolean                 @default(false)
+  //Multimedia
+  hasURL                   Boolean                 @default(false)
+  hasImage                 Boolean                 @default(false)
+  hasFile                  Boolean                 @default(false)
+  hasVideo                 Boolean                 @default(false)
+  isVocal                  Boolean                 @default(false)
+  hasEdits                 Boolean                 @default(false)
+  multimedia               multimedia[]
+  urls                     urls[]
+  //IN A PLACE
+  place                    place?                  @relation(fields: [placeID], references: [id])
+  placeID                  Int?
+
+  //CREATED NOTIFICATIONS
+  created_notifications single_notification[]
+
+
+  //DOING AN ACTIVITY
+  activities activity? @relation(fields: [activityID], references: [id])
+  activityID Int?
+
+  //TO LOG ALL ACTIVITIES
+  user_activity user_activity[]
+
+  //users who have already seen this post
+  alreadySeen user[] @relation("posts_already_seen")
+
+  //is it shareable ? commentable ? reactable ?
+  isShareable   Boolean @default(true)
+  isCommentable Boolean @default(true)
+  isReactable   Boolean @default(true)
+}
+
+enum post_privacy_type {
+  include
+  exclude
+}
+
+model activity {
+  id                     Int                            @id @default(autoincrement())
+  post                   post[]
+  actName                activity_name                  @relation(fields: [actID], references: [id])
+  actID                  Int
+  with                   user[]
+  complimentary_relation activity_comp_to_name_unique[]
+}
+
+model activity_name {
+  id         Int        @id @default(autoincrement())
+  name       String     @unique
+  activities activity[]
+  thumbnail  String?
+}
+
+model activity_complimentary {
+  id                Int                            @id @default(autoincrement())
+  activity_relation activity_comp_to_name_unique[]
+  text              String                         @unique
+  thumbnail         String?
+}
+
+model activity_comp_to_name_unique {
+  id            Int                     @id @default(autoincrement())
+  complimentary activity_complimentary? @relation(fields: [compID], references: [id])
+  compID        Int?
+  activity      activity                @relation(fields: [actID], references: [id])
+  actID         Int
+
+  @@unique([compID, actID])
+}
+
+model place {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  posts post[]
+}
+
+model tag {
+  id               Int                @id @default(autoincrement())
+  hashtag          String
+  post             post?              @relation(fields: [postID], references: [id])
+  postID           Int?
+  media            multimedia?        @relation(fields: [mediaID], references: [id])
+  mediaID          Int?
+  score            Float
+  tags_preferences tags_preferences[]
+}
+
+//COMMENTS
+model comment {
+  id                    Int                     @id @default(autoincrement())
+  writer                user?                   @relation(fields: [userID], references: [id])
+  userID                Int
+  post                  post                    @relation(fields: [postID], references: [id])
+  postID                Int
+  content               String?
+  replyToComment        comment?                @relation("replyTo", fields: [replyToID], references: [id])
+  replyToID             Int?
+  replies               comment[]               @relation("replyTo")
+  reactions             reaction[]
+  personsTagged         person_tagging_in_text?
+  edits                 edits[]
+  user_activity         user_activity[]
+  created_at            DateTime                @default(now())
+  created_notifications single_notification[]
+  //Multimedia
+  hasURL                Boolean                 @default(false)
+  hasImage              Boolean                 @default(false)
+  hasFile               Boolean                 @default(false)
+  hasVideo              Boolean                 @default(false)
+  isVocal               Boolean                 @default(false)
+  hasEdits              Boolean                 @default(false)
+  multimedia            multimedia[]
+  urls                  urls[]
+  //Person Tagging
+  hasTaggedPerson       Boolean                 @default(false)
+}
+
+model edits {
+  id         Int      @id @default(autoincrement())
+  //can edit a post
+  post       post?    @relation(fields: [postID], references: [id])
+  postID     Int?
+  //can edit a comment
+  comment    comment? @relation(fields: [commentID], references: [id])
+  commentID  Int?
+  //can edit a message
+  message    message? @relation(fields: [messageID], references: [id])
+  messageID  Int?
+  //created
+  created_at DateTime @default(now())
+  //new text value
+  text       String
+}

@@ -1,0 +1,1 @@
+module.exports = ({username,groupName})=>`${groupName}: ${username} wants to hop in`

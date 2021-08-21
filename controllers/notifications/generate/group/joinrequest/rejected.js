@@ -1,0 +1,1 @@
+module.exports = ({groupName})=>`${groupName}: Your join request has been rejected`

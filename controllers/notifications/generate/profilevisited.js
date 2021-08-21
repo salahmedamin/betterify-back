@@ -1,0 +1,1 @@
+module.exports = ({username})=>`${username} took a peak at you, don't tell them we told you`
