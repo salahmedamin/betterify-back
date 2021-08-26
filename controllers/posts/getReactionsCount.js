@@ -9,7 +9,9 @@ module.exports = async ({
         by: ["emoji"],
         where:{
             post:{
-                id: postID
+                id: postID,
+                isDeleted: false,
+                isDeletedBySystem: false
             }
         },
         _count: {

@@ -8,7 +8,8 @@ module.exports = async ({
     return await prisma.reaction.findMany({
         where:{
             message:{
-                id: messageID
+                id: messageID,
+                isDeleted: false
             }
         },
         take: 20,

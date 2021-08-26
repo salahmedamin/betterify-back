@@ -1,6 +1,6 @@
 module.exports = ({
     my = undefined,
-    isOther = undefined,
+    username = undefined,
     isReact = undefined,
     isTagged = undefined,
     isGroup = undefined,
@@ -26,7 +26,7 @@ module.exports = ({
 }) => {
     let level1, level2, level3
     //LEVEL 1
-    level1 = !isOther ? (isGroup ?
+    level1 = !username ? (isGroup ?
         'group'
         :
         isPost ?
@@ -44,7 +44,7 @@ module.exports = ({
             'profilevisited'
 
     //LEVEL 2
-    level2 = !isOther ? (
+    level2 = !username ? (
         isFollow ?
             (
                 isFollowPlus ? 'plus'
@@ -100,7 +100,7 @@ module.exports = ({
 
     //LEVEL 3
 
-    level3 = !isOther && !isFollow ? (
+    level3 = !username && !isFollow ? (
         isGroup ? (
             role ? (
                 set ? 'set' :

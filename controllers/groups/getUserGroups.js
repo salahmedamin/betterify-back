@@ -13,7 +13,8 @@ module.exports = async ({ userID, chatGroupsOnly = false, index = 0, selectAll =
                     }
                 }
             },
-            isChatGroup: chatGroupsOnly
+            isChatGroup: chatGroupsOnly,
+            isDeleted: false
         },
         select:{
             groupName: true,

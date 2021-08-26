@@ -18,6 +18,7 @@ module.exports = async ({commentID,text}) => {
                         text
                     }
                 },
+                hasEdits: true,
                 user_activity:{
                     create:{
                         user:{
@@ -28,6 +29,9 @@ module.exports = async ({commentID,text}) => {
                         activity: "comment_edit"
                     }
                 }
+            },
+            select:{
+                content: true,
             }
         })
         return res

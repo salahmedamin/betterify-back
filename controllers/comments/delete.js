@@ -4,14 +4,17 @@ const commentManager = require("../../middlewares/comments")
 const prisma = new PrismaClient()
 module.exports = async ({commentID,deleterID}) => {
     if(!(await commentManager.canDeleteComment(commentID,deleterID))){
-        return false
+        return {error: true}
     }
     else{
-        const res = await prisma.comment.delete({
+        const res = await prisma.comment.update({
             where:{
                 id: commentID
+            },
+            data:{
+                isDeleted: true
             }
         })
-        return res ? true : false
+        return res ? {success:true} : {error: true}
     }
 }

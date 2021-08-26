@@ -1,15 +1,24 @@
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient()
-module.exports = async ({bioID,text,audience:{sex,age}}) => {
-    const res = await prisma.user_bio.update({
+module.exports = async ({bioID, userID,text,sex=undefined,age=undefined}) => {
+    const res = await prisma.user.update({
         where:{
-            id: bioID
+            id: userID
         },
         data:{
-            age,
-            bio:text,
-            sex
+            bios:{
+                update:{
+                    where:{
+                        id: bioID
+                    },
+                    data:{
+                        age,
+                        bio: text,
+                        sex
+                    }
+                }
+            }
         }
     })
     return res ? true : false

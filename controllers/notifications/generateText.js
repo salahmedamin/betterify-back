@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 const getLevels = require("./add/getLevels")
 
 
-module.exports = async({
+module.exports = async ({
     username,
     groupID = undefined,
     isQuit = undefined,
@@ -14,7 +14,7 @@ module.exports = async({
     role = undefined,
     set = undefined,
     unset = undefined,
-    isJoinReq = undefined,
+    joinReqID = undefined,
     isInvite = undefined,
     accepted = undefined,
     rejected = undefined,
@@ -25,19 +25,16 @@ module.exports = async({
     postID = undefined,
     isShared = undefined,
     isTagged = undefined,
-    isOther = undefined,
     isReact = undefined,
     my = undefined
 }) => {
     const levels = getLevels({
         my,
         isReact,
-        isOther,
+        username,
         isTagged,
-        isGroup: groupID,
         accepted,
         isInvite,
-        isJoinReq,
         received,
         rejected,
         forced,
@@ -46,20 +43,25 @@ module.exports = async({
         role,
         set,
         unset,
-        isComment: commentID,
         isFollowingComment,
         isReply,
+        isShared,
         isPost: postID,
-        isShared
+        isComment: commentID,
+        isJoinReq : joinReqID,
+        isGroup: groupID,
     })
-    
-    const {level1,level2,level3} = levels
-    return require(`./generate/${level1}${level2 ? `/${level2}` : ""}${level3 ? `/${level3}` : ""}`)({
-        commentID,
-        groupID,
-        postID,
-        username,
-        groupName: (await prisma.groups.findFirst({where:{id:groupID}})).groupName,
-        role
-    })
+
+    const { level1, level2, level3, text } = levels
+    return {
+        text: require(`./generate/${level1}${level2 ? `/${level2}` : ""}${level3 ? `/${level3}` : ""}`)({
+            commentID,
+            groupID,
+            postID,
+            username,
+            groupName: (await prisma.groups.findFirst({ where: { id: groupID } }))?.groupName,
+            role
+        }),
+        type: text
+    }
 }

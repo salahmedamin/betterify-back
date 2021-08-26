@@ -9,16 +9,25 @@ module.exports = async ({ userID, hobbyID, hobby }) => {
         },
         data:{
             hobby:{
-                update:{
+                disconnect:{
+                    id: hobbyID
+                },
+                connectOrCreate:{
                     where:{
-                        id:hobbyID
+                        hobby
                     },
-                    data:{
+                    create:{
                         hobby
                     }
-                }
+                },
             }
         }
     })
-    return res ? true : false
+    return res ? {
+        success: true
+    }
+    :
+    {
+        error: true
+    }
 }

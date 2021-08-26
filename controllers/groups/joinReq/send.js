@@ -1,8 +1,9 @@
 const { PrismaClient } = require("@prisma/client")
+const isGroupPublic = require("../check/isGroupPublic")
 
 const prisma = new PrismaClient()
-module.exports = async ({ groupID,toJoinGroupID }) => {
-
+module.exports = async ({ groupID, userID }) => {
+    const isPublicGroup = await isGroupPublic({groupID})
     const res = await prisma.groups_join_requests.create({
         data:{
             group:{
@@ -10,10 +11,10 @@ module.exports = async ({ groupID,toJoinGroupID }) => {
                     id:groupID
                 }
             },
-            isPending: true,
+            isPending: isPublicGroup ? false : true,
             member:{
                 connect:{
-                    id: toJoinGroupID
+                    id:  userID
                 }
             }
         }

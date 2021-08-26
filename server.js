@@ -1,62 +1,35 @@
-// const { default: got } = require("got")
 const express = require("express")
 const cors = require("cors")
 const bodyParser = require("body-parser")
 const app = express()
-const helmet = require("helmet")
+// const helmet = require("helmet")
 
-// const get = require("./controllers/messages/get")
-// const getReplies = require("./controllers/messages/getReplies")
 const PORT = 5000
-const _multer = require("multer")
-const storage = _multer.diskStorage({ // notice you are calling the multer.diskStorage() method here, not multer()
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/')
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now())
-  }
-});
-const multer = _multer({ storage })
 
-app.use(helmet({
-  frameguard: {
-    action: "deny"
-  },
-  dnsPrefetchControl: {
-    allow: true
-  },
-  hidePoweredBy: true,
-  ieNoOpen: true,
-  noSniff: true,
-  referrerPolicy: {
-    policy: ["origin", "unsafe-url"],
-  },
-  expectCt: {
-    enforce: true,
-    maxAge: 96400
-  },
-  xssFilter: true
-}))
+// app.use(helmet({
+//   frameguard: {
+//     action: "deny"
+//   },
+//   dnsPrefetchControl: {
+//     allow: true
+//   },
+//   hidePoweredBy: true,
+//   ieNoOpen: true,
+//   noSniff: true,
+//   referrerPolicy: {
+//     policy: ["origin", "unsafe-url"],
+//   },
+//   expectCt: {
+//     enforce: true,
+//     maxAge: 96400
+//   },
+//   xssFilter: true
+// }))
 
 //importing router
 const apiRouter = require("./routes/api")
-const makeLocal = require("./controllers/multimedia/makeLocal")
-const upload = require("./controllers/multimedia/upload")
-const add = require("./controllers/notifications/add")
-const getSimilarTags = require("./controllers/posts/getSimilarTags")
-const getSinglePost = require("./controllers/posts/getSinglePost")
-const getReactions = require("./controllers/posts/getReactionsCount")
-const get_image_tags = require("./AI/files/images/image_tags/get_image_tags")
-const facial_recognition = require("./AI/files/images/facial_recognition")
-const nsfw = require("./AI/files/images/nsfw")
-const free = require("./AI/files/images/image_tags/free")
-const process_media = require("./controllers/posts/media/process_media")
-const create = require("./controllers/posts/create")
-const send = require("./controllers/messages/send")
-const checkBlock = require("./controllers/blocking/checkBlock")
-// const getChatList = require("./controllers/conversation/getChatList")
-// const save = require("./functions/files/save")
+const { PrismaClient } = require("@prisma/client")
+
 
 app.use(cors({
   origin: ["*"],
@@ -68,7 +41,71 @@ app.use(express.json())
 BigInt.prototype.toJSON = function () {
   return this.toString()
 }
-app.use(apiRouter)
+
+app.get("/xx", async(req, res) => {
+  const prisma = new PrismaClient()
+  res.send(await prisma.$transaction([
+    {
+      name: "Listening to",
+      requiredComp: true
+    },
+    {
+      name: "Playing",
+      requiredComp: false
+    },
+    {
+      name: "Attending",
+      requiredComp: true
+    },
+    {
+      name: "Watching",
+      requiredComp: true
+    },
+    {
+      name: "Eating",
+      requiredComp: true
+    },
+    {
+      name: "Drinking",
+      requiredComp: true
+    },
+    {
+      name: "Celebrating",
+      requiredComp: false
+    },
+    {
+      name: "Reading",
+      requiredComp: false
+    },
+    {
+      name: "Searching for",
+      requiredComp: true
+    },
+    {
+      name: "Traveling to",
+      requiredComp: true
+    },
+    {
+      name: "Supporting",
+      requiredComp: true
+    },
+    {
+      name: "Thinking about",
+      requiredComp: true
+    }
+  ]
+    .map(a => prisma.activity_name.create({
+      data: {
+        name: a.name,
+        thumbnail: a.name.toLowerCase().replace(" ", "_") + ".png"
+      }
+    })
+    )
+  )
+  )
+})
+
+// app.use(apiRouter)
 
 // app.get("/notifType/", async (req, res) => {
 //   try {
@@ -88,62 +125,9 @@ app.use(apiRouter)
 // }
 // )
 
-// app.get("/simTags", async (req, res) =>
-//   res.send([
-//     ...await getSimilarTags({ postID: 1 })
-//   ])
-// )
+
 
 // app.use("/images", express.static("images"))
-
-// app.use("/api", apiRouter)
-
-// app.post("/imagga/", async (req, res) => {
-//   try {
-//     res.send(await free(req.body.link, true))
-//   }
-//   catch (e) {
-//     res.send({
-//       error: true,
-//       stack: e.stack
-//     })
-//   }
-// }
-// )
-
-// app.post("/posts/create", multer.array('file'), async (req, res) => {
-//   try {
-//     res.send({
-//       ...await create(
-//         {
-//           userID: 1,
-//           content: "Normally everything ok ! http://www.google.com",
-//           files: req.files,
-//           _with: [{ username: "chaali" }],
-//           isCommentable: false,
-//           isShareable: false,
-//           activity: {
-//             name: "Hiking",
-//             complimentary: {
-//               name: "Huskey",
-//               thumbnail: "xx"
-//             }
-//           },
-//           place: {
-//             name: "Ariana"
-//           },
-//         }
-//       )
-//     })
-//   }
-//   catch (e) {
-//     res.send({
-//       error: true,
-//       stack: e.stack
-//     })
-//   }
-// }
-// )
 
 
 // app.post("/enc/", multer.single('file'), async (req, res) => {

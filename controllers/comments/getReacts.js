@@ -5,7 +5,9 @@ module.exports = async ({ commentID, order = "desc", index = 0 }) => {
     const res = await prisma.reaction.findMany({
         where: {
             comment: {
-                id: commentID
+                id: commentID,
+                isDeleted: false,
+                isDeletedBySystem: false
             }
         },
         orderBy:{
@@ -14,5 +16,5 @@ module.exports = async ({ commentID, order = "desc", index = 0 }) => {
         take:30,
         skip:index*30
     })
-    return res||false
+    return res
 }

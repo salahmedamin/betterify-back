@@ -8,7 +8,9 @@ module.exports = async ({
     return await prisma.edits.findMany({
         where:{
             post:{
-                id: postID
+                id: postID,
+                isDeleted: false,
+                isDeletedBySystem: false
             }
         },
         orderBy:{

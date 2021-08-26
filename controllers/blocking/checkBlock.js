@@ -40,5 +40,6 @@ module.exports = async ({ blockerID, blockedID, absolute = false }) => {
                 undefined
         },
     })
+    
     return res ? true : false
 }

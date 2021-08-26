@@ -1,11 +1,10 @@
 const { PrismaClient } = require("@prisma/client")
-const getPostHighestReact = require("./getPostHighestReact")
-const getReactionsCount = require("./getReactionsCount")
-const getUserReactOnPost = require("./getUserReactOnPost")
+const formatPosts = require("./formatPosts")
+const generateSelect = require("./generateSelect")
 const prisma = new PrismaClient()
 module.exports = async ({ postID, userID, index = 0 }) => {
-    
-    const res = await prisma.$queryRaw`
+
+  const res = await prisma.$queryRaw`
     SELECT 
   * 
 FROM 
@@ -18,7 +17,17 @@ FROM
       onlyFollowersAndFollowed, 
       privacyType, 
       groupID,
-      diff 
+      diff,
+      isDeletedBySystem,
+      isDeleted,
+      (
+        SELECT * 
+        FROM _posts_already_seen 
+        WHERE 
+          A = ${postID}
+          AND
+          B = ${userID}
+      ) isSeen
     FROM 
       (
         SELECT 
@@ -80,7 +89,35 @@ FROM
       ) a
   ) post 
 WHERE 
-  post.groupID IS NULL
+  (
+    post.groupID IS NULL
+    OR
+    (
+      (SELECT isDeleted FROM groups WHERE id = post.groupID) = 0
+      AND
+      (
+        (SELECT isPublic FROM groups WHERE id = post.groupID) = 1)
+        OR
+        EXISTS (
+          SELECT * 
+          FROM groups_join_requests 
+          WHERE 
+            memberID = ${userID} 
+            AND
+            groupID = post.groupID
+            AND
+            isPending = 0
+            AND
+            isDeleted = 0
+        )
+      )
+    )
+  )
+  AND
+  AND
+  post.isDeleted = 0
+  AND
+  post.isDeletedBySystem = 0
   AND
   #only not excluded people
   (
@@ -155,7 +192,7 @@ WHERE
         )
       )
     ) 
-    AND #NOT BLOCKED, NOR BLOCKED
+    AND #NOT BLOCKER, NOR BLOCKED
     NOT EXISTS(
       SELECT 
         * 
@@ -171,100 +208,31 @@ WHERE
           AND ub.blockerID = ${userID}
         )
     ) END
+    ORDER BY isSeen ASC
   )
-  LIMIT ${index*20},20
+  LIMIT ${index * 20},20
     `
-    let all = []
-    for(const r of res){
-        const post = await prisma.post.findFirst({
-            where:{
-                id: r.id
-            },
-            include:{
-                multimedia:{
-                    select:{
-                        type: true,
-                        unique: true,
-                        faces:{
-                            select:{
-                                height:true,
-                                width: true,
-                                left: true,
-                                top: true,
-                                person:{
-                                    select: {
-                                        username: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                activities:{
-                    select:{
-                        actName: {
-                            select:{
-                                name: true,
-                                thumbnail: true,
-                                complimentary_relation:{
-                                    select: {
-                                        complimentary: true
-                                    }
-                                }
-                            }
-                        },
-                        with: {
-                            select:{
-                                username: true
-                            }
-                        }
-                    }
-                },
-                place:{
-                    select:{
-                        name: true
-                    }
-                },
-                owner:{
-                  select:{
-                    username: true,
-                    firstName: true,
-                    lastName: true,
-                    profilePic: true
-                  }
-                }
-            }
-        })
-        const data = {
-            ...r,
-            ...post,
-            activities: undefined,
-            activity:{
-                name: res.activities?.actName,
-                with: res.activities?.with
-            },
-            place:res.place?.name,
-            multimedia: post.multimedia?.map(a=>({
-                ...a,
-                faces:a.faces.map(e=>({
-                    ...e,
-                    username: e.person?.username,
-                    person: undefined
-                }))
-            })) ,
-            react: {
-              max: await getPostHighestReact({postID: r.id}),
-              user: await getUserReactOnPost({postID: r.id, userID}),
-              types: await getReactionsCount({postID:r.id})
-            },
-            activityID: undefined,
-            placeID: undefined,
-            groupID: undefined
-        }
-        all = [
-            ...all,
-            data
-        ]
+  let all = []
+  for (const r of res) {
+    const post = await prisma.post.findFirst({
+      where: {
+        id: r.id
+      },
+      select:{
+        ...generateSelect({viewerID: userID})
+      }
+    })
+    const data = {
+      ...r,
+      ...post,
+      activityID: undefined,
+      placeID: undefined,
+      groupID: undefined
     }
-    return all
+    all = [
+      ...all,
+      data
+    ]
+  }
+  return await formatPosts({postsArray: all})
 }

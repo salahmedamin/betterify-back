@@ -11,7 +11,9 @@ module.exports = async ({
     const res = await prisma.multimedia.findMany({
         where: {
             post: {
-                id: postID
+                id: postID,
+                isDeleted: false,
+                isDeletedBySystem: false
             },
             type: (audio || video || file || image) ? {
                 in: [

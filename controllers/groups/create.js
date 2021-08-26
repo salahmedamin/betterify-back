@@ -24,21 +24,19 @@ module.exports = async ({ creatorID, groupName, groupPic, isPublic, rules, membe
                 }
             } : undefined,
             members: {
-                create: !isChatGroup ? {
-                    member: {
-                        connect: {
+                createMany: isChatGroup ? {
+                    data: [
+                        ...members,
+                        {
                             id: creatorID
-                        },
-                    },
-                    isPending: false
-                } : undefined,
-                createMany: !isChatGroup ? undefined : {
-                    data: members.map(a => ({
-                        adderID: creatorID,
+                        }
+                        ]
+                        .map(a => ({
+                        adderID: a.id == creatorID ? undefined : creatorID,
                         memberID: a.id,
                         isPending: false
                     }))
-                }
+                }:undefined
             },
             roles: !isChatGroup ? {
                 create: {

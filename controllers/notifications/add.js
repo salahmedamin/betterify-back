@@ -1,55 +1,119 @@
 const { PrismaClient } = require("@prisma/client")
-const getLevels = require("./add/getLevels")
+const generateText = require("./generateText")
 
 
 const prisma = new PrismaClient()
-module.exports = ({
-    groupID = undefined,
+module.exports = async ({
+    userID, //id of user to notify
+    link, //where to redirect user on clicking notif
     isQuit = false,
     forced = undefined,
     user = undefined,
-    isRole = false,
+    role = false,
     set = undefined,
     unset = undefined,
-    isJoinReq = false,
     isInvite = false,
     accepted = undefined,
     rejected = undefined,
     received = undefined,
-    commentID = undefined,
     isReply = false,
     isFollowingComment = false,
-    postID = undefined,
     isShared = false,
     isTagged = false,
-    isOther = undefined,
     isReact = undefined,
-    my = false
+    my = false,
+    postID = undefined,
+    commentID = undefined,
+    groupID = undefined,
+    joinReqID = undefined,
+    username = undefined,
 }) => {
-    const levels = getLevels({
-        my,
-        isReact,
-        isOther,
-        isTagged,
-        isGroup: groupID,
-        accepted,
-        isInvite,
-        isJoinReq,
-        received,
-        rejected,
-        forced,
-        isQuit,
-        user,
-        isRole,
-        set,
-        unset,
-        isComment: commentID,
-        isFollowingComment,
-        isReply,
-        isPost: postID,
-        isShared
+    const notif = await generateText({
+        my, //is it my own post : boolean
+        isReact, //is it a post reaction : boolean
+        isTagged, //am i being tagged : boolean
+        accepted, //join request status : boolean
+        isInvite, //is it an invite to join a group : boolean
+        received, //join request status : boolean
+        rejected, //join request status : boolean
+        forced, //is a member forcefully kicked out of group : boolean
+        isQuit, //is this related to quitting a group : boolean
+        user, //to mark if a user quit the group : boolean
+        role, //is this related to role management : boolean
+        set, //role management - either set : boolean
+        unset, //role management - or unset : boolean
+        isFollowingComment, //has this user been following a comment : boolean
+        isReply, //is this a reply to comment : boolean
+        isShared, //has this post been shared: boolean
+        username, //has this notif come from a person: String
+        postID, //id of post which notif came from: Int
+        commentID, //id of comment which notif came from: Int
+        joinReqID, //id of join request which notif came from: Int
+        groupID, //id of group which notif came from: Int
     })
     
-    const {level1,level2,level3} = levels
-    return require(`./generate/${level1}${level2 ? `/${level2}` : ""}${level3 ? `/${level3}` : ""}`)
+    if(notif.type == "profilevisited"){
+        if(await prisma.single_notification.findFirst({
+            where:{
+                type:"profilevisited",
+                fromPerson:{
+                    username
+                },
+                list:{
+                    user:{
+                        id: userID
+                    }
+                }
+            }
+        })) return false
+    }
+
+    await prisma.single_notification.create({
+        data:{
+            redirectTo: link,
+            fromGroup:groupID ? {
+                connect:{
+                    id: groupID
+                }
+            } : undefined,
+            fromGroupJoinRequest:groupID && joinReqID ? {
+                connect:{
+                    id: joinReqID
+                }
+            }: undefined,
+            fromComment: commentID ? {
+                connect:{
+                    id: commentID
+                }
+            } : undefined,
+            fromPerson:username ? {
+                connect:{
+                    username
+                }
+            } : undefined,
+            fromPost:postID ? {
+                connect:{
+                    id: postID
+                }
+            } : undefined,
+            text: notif.text,
+            type: notif.type,
+            isSeen: false,
+            list:{
+                connectOrCreate:{
+                    where:{
+                        id:(await prisma.notification_list.findFirst({where:{user:{id:userID}}}))?.id || -1
+                    },
+                    create:{
+                        user:{
+                            connect:{
+                                id: userID
+                            }
+                        }
+                    }
+                }
+            },
+        }
+    })
+
 }

@@ -9,11 +9,17 @@ module.exports = async ({ userID, hobbyID }) => {
         },
         data:{
             hobby:{
-                delete:{
+                disconnect:{
                     id:hobbyID
                 }
             }
         }
     })
-    return res ? true : false
+    return res ? {
+        success: true
+    }
+    :
+    {
+        error: true
+    }
 }

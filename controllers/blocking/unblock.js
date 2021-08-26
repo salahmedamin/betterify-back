@@ -10,7 +10,8 @@ module.exports = async ({blockerID,blockedID}) => {
             blocked:{
                 delete:{
                     blockerID_blockedID:{
-                        blockedID
+                        blockedID,
+                        blockerID
                     }
                 }
             },
@@ -26,5 +27,11 @@ module.exports = async ({blockerID,blockedID}) => {
             }
         }
     })
-    return res ? true : false
+    return res ? {
+        success:true
+    } 
+    :
+    {
+        error: true
+    }
 }

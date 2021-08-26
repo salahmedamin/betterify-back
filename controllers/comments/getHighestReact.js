@@ -5,7 +5,9 @@ module.exports = async ({ commentID }) => {
     const data = await prisma.reaction.aggregate({
         where:{
             comment:{
-                id: commentID
+                id: commentID,
+                isDeleted: false,
+                isDeletedBySystem: false
             }
         },
         max: {

@@ -1,9 +1,9 @@
 const { PrismaClient } = require("@prisma/client")
-const nicknameExists = require("./nicknameExists")
+const getNickname = require("./getNickname")
 
 const prisma = new PrismaClient()
 module.exports = async ({ userID = undefined, groupID = undefined, otherID = undefined, name = '' }) => {
-    const isNamedAlready = await nicknameExists({userID, groupID, otherID})
+    const isNamedAlready = await getNickname({userID, groupID, otherID})
     const res = await prisma.chat_list.update({
         where: {
             owner: {

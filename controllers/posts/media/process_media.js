@@ -7,24 +7,28 @@ const upload = require("../../multimedia/upload")
 
 module.exports = async ({
     files = [],
-    postID,
+    postID = undefined,
+    messageID = undefined,
+    commentID = undefined,
     groupID = undefined
 }) => {
+    if (!(messageID || commentID || postID)) return false
     let postScore = [], types = []
-    const groupStrict = !groupID ? undefined : await prisma.groups.findFirst({
-        where:{
-            id: groupID
-        },
-        select:{
-            isChatGroup: true,
-            group_strictness_disallowed:{
-                select:{
-                    subject: true
+    const groupStrict =
+        groupID ? await prisma.groups.findFirst({
+            where: {
+                id: groupID
+            },
+            select: {
+                isChatGroup: true,
+                group_strictness_disallowed: {
+                    select: {
+                        subject: true
+                    }
                 }
             }
-        }
-    })
-    if(groupStrict?.isChatGroup) throw new Error("Can't do this")
+        }) : undefined
+    let abort = false
     for (const one of files) {
         const data = await fileType.fromFile(one.path)
         const meta = data.mime.split("/")[0]
@@ -32,37 +36,48 @@ module.exports = async ({
         const faces = one.faces || []
         const unique = (await upload(one)).id
 
-        if(!types.includes(type)) types.push(type)
+        if (!types.includes(type)) types.push(type)
 
         //check if accepted by group
-        if(groupStrict){
+        if (groupStrict) {
             const response = await picpurify({
                 id: unique,
-                moderate:{
-                    hate_sign: groupStrict.group_strictness_disallowed.find(a=>a.subject == "crosswords"),
-                    weapon: groupStrict.group_strictness_disallowed.find(a=>a.subject == "guns"),
-                    nudity: groupStrict.group_strictness_disallowed.find(a=>a.subject == "nudity"),
+                moderate: {
+                    hate_sign: groupStrict.group_strictness_disallowed.find(a => a.subject == "crosswords"),
+                    weapon: groupStrict.group_strictness_disallowed.find(a => a.subject == "guns"),
+                    nudity: groupStrict.group_strictness_disallowed.find(a => a.subject == "nudity"),
                 }
             })
-            
-            if(response.final_decision !== "OK"){
-                continue
+
+            if (response.final_decision !== "OK") {
+                abort = true
+                break
             }
         }
 
-        const tags = meta == "image" ? await get_image_tags({ link: "https://pixeldrain.com/api/file/" + unique, label: true }) : []
-        
+        const tags = postID ? (meta == "image" ? await get_image_tags({ link: "https://pixeldrain.com/api/file/" + unique, label: true }) : []) : undefined
+
         //
         await prisma.multimedia.create({
             data: {
-                post: {
+                post: postID ? {
                     connect: {
                         id: postID,
                     }
-                },
+                } : undefined,
+                comment: commentID ? {
+                    connect: {
+                        id: commentID
+                    }
+                } : undefined,
+                message: messageID ? {
+                    connect: {
+                        id: messageID
+                    }
+                } : undefined,
                 unique: unique,
                 type: type,
-                faces: {
+                faces: postID ? {
                     createMany: {
                         data: faces.map(e => ({
                             height: e?.height,
@@ -76,16 +91,16 @@ module.exports = async ({
                             }
                         }))
                     },
-                },
-                tags: {
+                } : undefined,
+                tags: postID ? {
                     createMany: {
                         data: tags
                     }
-                }
+                } : undefined
             }
         })
         //
-        if (meta == "image") {
+        if (meta == "image" && postID) {
             tags?.forEach(a => {
                 const exists = postScore.findIndex(e => e.hashtag == a.hashtag)
 
@@ -97,32 +112,84 @@ module.exports = async ({
                 }
             })
         }
-        require("fs").unlink(one.path,()=>true)
+        require("fs").unlink(one.path, (err) => {
+            if (err) console.log("DELETE ERROR", err)
+        })
+    }
+
+    if (abort) {
+        if (postID) await prisma.post.delete({
+            where: {
+                id: postID
+            }
+        })
+        else if (commentID) await prisma.comment.delete({
+            where: {
+                id: commentID
+            }
+        })
+        else if (messageID) await prisma.message.delete({
+            where: {
+                id: messageID
+            }
+        })
+        return {
+            error: true,
+            message: "Some uploaded media doesn't respect our rules"
+        }
     }
 
 
-    postScore.sort((a, b) => (a.score < b.score) ? 1 : ((b.score < a.score) ? -1 : 0)).filter((a, i) => i < 5)
+    if (postID) postScore.sort((a, b) => (a.score < b.score) ? 1 : ((b.score < a.score) ? -1 : 0)).filter((a, i) => i < 5)
 
-    const ret =
-        postScore.length > 0 ? 
-        await prisma.post.update({
+    if (postID) {
+        if (postScore.length > 0) {
+            await prisma.post.update({
+                where: {
+                    id: postID
+                },
+                data: {
+                    tags: {
+                        createMany: {
+                            data: postScore
+                        }
+                    },
+                    hasFile: types.includes("file"),
+                    isVocal: types.includes("audio"),
+                    hasImage: types.includes("image"),
+                    hasVideo: types.includes("video")
+                }
+            })
+        }
+        return true
+    }
+    else if (messageID) {
+        await prisma.message.update({
             where: {
-                id: postID
+                id: messageID
             },
             data: {
-                tags: {
-                    createMany: {
-                        data: postScore
-                    }
-                },
                 hasFile: types.includes("file"),
                 isVocal: types.includes("audio"),
                 hasImage: types.includes("image"),
                 hasVideo: types.includes("video")
             }
         })
-        :
-        true
-
-    return ret ?? { error: true }
+        return true
+    }
+    else if (commentID) {
+        await prisma.comment.update({
+            where: {
+                id: commentID
+            },
+            data: {
+                hasFile: types.includes("file"),
+                isVocal: types.includes("audio"),
+                hasImage: types.includes("image"),
+                hasVideo: types.includes("video")
+            }
+        })
+        return true
+    }
+    return false
 }

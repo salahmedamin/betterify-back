@@ -10,53 +10,76 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model blacklisted_tokens {
+  id    Int    @id @default(autoincrement())
+  token String
+}
+
+//rating
+model rating {
+  rater   user   @relation("usersIRated", fields: [raterID], references: [id])
+  raterID Int
+  rated   user   @relation("usersRatedMe", fields: [ratedID], references: [id])
+  ratedID Int
+  rate    Float
+  message String
+
+  @@unique([raterID, ratedID])
+}
+
 model user {
-  id                            Int                           @id @default(autoincrement())
-  username                      String                        @unique
+  id                            Int                      @id @default(autoincrement())
+  username                      String                   @unique
+  email                         String                   @unique
   password                      String
   profilePic                    String
   firstName                     String
   lastName                      String
+  //CAN SEX BE REVEALED
+  revealSex                     Boolean                  @default(false)
+  revealEmail                   Boolean                  @default(false)
+  revealBirthDate               Boolean                  @default(false)
+  //IF A RESTAURANT OR ANYTHING PUBLIC THING THAT CAN BE RATED
+  canBeRated                    Boolean                  @default(false)
+  rated                         rating[]                 @relation("usersIRated")
+  raters                        rating[]                 @relation("usersRatedMe")
   //FOLLOW
-  follows                       user_to_user_follows[]        @relation("Follower")
-  followedBy                    user_to_user_follows[]        @relation("Followed")
-  //VISITING PROFILES
-  profileVisits                 user_to_user_profile_visits[] @relation("profileVisits")
-  profileVisited                user_to_user_profile_visits[] @relation("profileVisited")
+  follows                       user_to_user_follows[]   @relation("Follower")
+  followedBy                    user_to_user_follows[]   @relation("Followed")
   //BLOCKING
-  blocked                       user_to_user_blockings[]      @relation("blocker")
-  blockedBy                     user_to_user_blockings[]      @relation("blocked")
+  blocked                       user_to_user_blockings[] @relation("blocker")
+  blockedBy                     user_to_user_blockings[] @relation("blocked")
   //REACTIONS (MESSAGES/COMMENTS/POSTS)
   reactions                     reaction[]
   //MESSAGES
-  messagesSent                  message[]                     @relation("MessagingOutgoing")
-  messagesReceived              message[]                     @relation("MessagingIncoming")
+  messagesSent                  message[]                @relation("MessagingOutgoing")
+  messagesReceived              message[]                @relation("MessagingIncoming")
   textTaggedIn                  person_tagging_in_text[]
   // #GROUPS
-  created_groups                groups[]                      @relation("creator")
-  added_members_to_groups       groups_join_requests[]        @relation("adder")
-  added_by_members_to_groups    groups_join_requests[]        @relation("added")
-  namer_in_convos               messages_nicknames[]          @relation("namer")
-  named_in_convos               messages_nicknames[]          @relation("named")
+  created_groups                groups[]                 @relation("creator")
+  added_members_to_groups       groups_join_requests[]   @relation("adder")
+  added_by_members_to_groups    groups_join_requests[]   @relation("added")
+  namer_in_convos               messages_nicknames[]     @relation("namer")
+  named_in_convos               messages_nicknames[]     @relation("named")
   // GROUPS #ROLES
   roles_in_groups               groups_roles[]
   // GROUPS (MESSAGES OR NOT) : admins accepting or deleting join requests
-  accepted_groups_join_requests groups_join_requests[]        @relation("accepted_invite")
-  deleted_groups_join_requests  groups_join_requests[]        @relation("deleted_invite")
+  accepted_groups_join_requests groups_join_requests[]   @relation("accepted_invite")
+  deleted_groups_join_requests  groups_join_requests[]   @relation("deleted_invite")
   //MESSAGES #CONVERSATION - DELETION / MUTING
-  chatLists                     chat_list[]                   @relation("ownChatList")
-  chatListUserIsIn              chat_list[]                   @relation("chatListContact")
+  chatLists                     chat_list[]              @relation("ownChatList")
+  chatListUserIsIn              chat_list[]              @relation("chatListContact")
   //POSTS
   posts                         post[]
   //COMMENTS
   comments                      comment[]
   //ACTIVITY LOG
-  activities                    user_activity[]               @relation("activity_owner")
-  activities_with               user_activity[]               @relation("activity_interacted_with")
+  activities                    user_activity[]          @relation("activity_owner")
+  activities_with               user_activity[]          @relation("activity_interacted_with")
   //TAGS TO RECOMMEND BASED ON
   preferred_tags                tags_preferences[]
   //CONNECTED
-  lastOnline                    BigInt?                       @db.BigInt
+  lastOnline                    BigInt?                  @db.BigInt
   //WHEN TAGGED IN A PHOTO
   photos_tagging_user           faces_in_photos[]
   //BIO
@@ -65,24 +88,30 @@ model user {
   hobby                         user_hobbies[]
   //SEX
   sex                           sexes
+  age                           ages
   //BIRTHDATE
-  birthDate                     BigInt                        @db.BigInt
+  birthDate                     BigInt                   @db.BigInt
   //DATE JOINED
-  created_at                    DateTime                      @default(now())
+  created_at                    DateTime                 @default(now())
   //PREFERRED THEME
   theme_color                   themes
   //PROFILE THEME
-  profile_theme                 String                        @default("")
+  profile_theme                 String                   @default("")
   //POSTS IN WHICH THIS USER IS TAGGED DOING SOMETHING
   activities_tagged_in          activity[]
   //NOTIFICATIONS
   notifications                 notification_list?
   created_notifications         single_notification[]
   //Muting others and being muted
-  muter                         muting[]                      @relation("muter")
+  muter                         muting[]                 @relation("muter")
+  muted                         muting[]                 @relation("muted")
 
-  postsVisibleTo   post[] @relation("users_visibility")
-  postsAlreadySeen post[] @relation("posts_already_seen")
+  postsVisibleTo    post[]              @relation("users_visibility")
+  postsAlreadySeen  post[]              @relation("posts_already_seen")
+  favoriteWatch     favoriteWatch[]
+  favoriteActors    favoriteActors[]
+  userSuggestedTo   followSuggestions[] @relation("suggestedTo")
+  followSuggestions followSuggestions[] @relation("suggested")
 }
 
 model notification_list {
@@ -96,7 +125,6 @@ enum notif_type {
   ///////follow
   follow_plus
   follow_minus
-
   ///////profile visits
   profilevisited
 
@@ -205,6 +233,8 @@ model user_hobbies {
   id    Int    @id @default(autoincrement())
   users user[]
   hobby String
+
+  @@unique([hobby])
 }
 
 enum sexes {
@@ -252,22 +282,10 @@ model user_to_user_follows {
   isPending        Boolean   @default(true)
   isDeleted        Boolean   @default(false)
   created_at       DateTime  @default(now())
-  updated_at       DateTime?
+  updated_at       DateTime? @updatedAt
   isFromSuggestion Boolean   @default(false)
 
   @@unique([followerID, followedID])
-}
-
-model user_to_user_profile_visits {
-  id         Int       @id @default(autoincrement())
-  visiter    user      @relation("profileVisits", fields: [visitorID], references: [id])
-  visitorID  Int
-  visited    user      @relation("profileVisited", fields: [visitedID], references: [id])
-  visitedID  Int
-  created_at DateTime  @default(now())
-  updated_at DateTime?
-
-  @@unique([visitorID, visitedID])
 }
 
 //ACTIVITIES
@@ -275,7 +293,6 @@ model user_to_user_profile_visits {
 enum activities {
   //follow
   user_follow
-  user_unfollow
   user_visit
   //story reply
   user_story_reply
@@ -306,6 +323,8 @@ enum activities {
   //posts
   post_add
   post_react
+  post_share
+  post_delete
   //commments
   comment_add
   comment_edit
@@ -342,6 +361,7 @@ model user_activity {
   commentId     Int?
   searchKeyword String?
   created_at    DateTime    @default(now())
+  updated_at    DateTime?   @updatedAt
 }
 
 //MESSAGES
@@ -412,7 +432,6 @@ model chat_list {
   isUnread     Boolean              @default(false)
   lastModified DateTime             @updatedAt
   messages     message[]
-  muting       muting[]
   nicknames    messages_nicknames[]
 
   @@unique([ownerID, otherID])
@@ -420,13 +439,15 @@ model chat_list {
 }
 
 model muting {
-  id        Int        @id @default(autoincrement())
-  muter     user       @relation("muter", fields: [muterID], references: [id])
-  muterID   Int
-  chat_list chat_list? @relation(fields: [chatID], references: [id])
-  chatID    Int
+  id         Int     @id @default(autoincrement())
+  muter      user    @relation("muter", fields: [muterID], references: [id])
+  muterID    Int
+  muted      user?   @relation("muted", fields: [mutedID], references: [id])
+  mutedID    Int?
+  mutedGroup groups? @relation(fields: [groupID], references: [id])
+  groupID    Int?
 
-  @@unique([muterID, chatID])
+  @@unique([muterID, mutedID, groupID])
 }
 
 model groups {
@@ -434,6 +455,7 @@ model groups {
   groupName                   String
   unique                      String                        @unique
   isPublic                    Boolean                       @default(true)
+  isDeleted                   Boolean                       @default(false)
   groupPic                    String
   created_at                  DateTime                      @default(now())
   creator                     user                          @relation("creator", fields: [creatorID], references: [id])
@@ -449,6 +471,7 @@ model groups {
   group_strictness_disallowed group_strictness_disallowed[]
   single_notification         single_notification[]
   chatListsGroupIsIn          chat_list[]
+  mutingList                  muting[]
 
   @@index([creatorID])
 }
@@ -607,10 +630,12 @@ model post {
   groupID                  Int?
   content                  String?
   reactions                reaction[]
+  isDeleted                Boolean                 @default(false)
+  isDeletedBySystem        Boolean                 @default(false)
   isShared                 Boolean                 @default(false)
   originalPost             post?                   @relation("OriginalSharedPost", fields: [originalID], references: [id])
   originalID               Int?
-  sharedPost               post?                   @relation("OriginalSharedPost")
+  sharedPost               post[]                  @relation("OriginalSharedPost")
   sent_in_message          message[]
   privacyType              post_privacy_type?
   onlyFollowers            Boolean                 @default(false)
@@ -653,6 +678,8 @@ model post {
   isShareable   Boolean @default(true)
   isCommentable Boolean @default(true)
   isReactable   Boolean @default(true)
+
+  @@index([originalID])
 }
 
 enum post_privacy_type {
@@ -670,10 +697,11 @@ model activity {
 }
 
 model activity_name {
-  id         Int        @id @default(autoincrement())
-  name       String     @unique
-  activities activity[]
-  thumbnail  String?
+  id                 Int        @id @default(autoincrement())
+  name               String     @unique
+  activities         activity[]
+  thumbnail          String?
+  requiresCompliment Boolean    @default(false)
 }
 
 model activity_complimentary {
@@ -713,6 +741,8 @@ model tag {
 //COMMENTS
 model comment {
   id                    Int                     @id @default(autoincrement())
+  isDeleted             Boolean                 @default(false)
+  isDeletedBySystem     Boolean                 @default(false)
   writer                user?                   @relation(fields: [userID], references: [id])
   userID                Int
   post                  post                    @relation(fields: [postID], references: [id])
@@ -755,4 +785,83 @@ model edits {
   created_at DateTime @default(now())
   //new text value
   text       String
+}
+
+enum watch_types {
+  movie
+  tv
+}
+
+model watch {
+  id                 Int                    @id @default(autoincrement())
+  type               watch_types
+  name               String
+  image              String?
+  releaseDate        String?
+  description        String?
+  rating             Float?
+  relationWithActors watch_actor_relation[]
+  TMDB_ID            Int                    @unique
+  usersThatFavorList favoriteWatch[]
+  genres             genres[]
+}
+
+model actor {
+  id                 Int                    @id @default(autoincrement())
+  name               String
+  image              String?
+  gender             sexes?
+  relationWithShows  watch_actor_relation[]
+  TMDB_ID            Int                    @unique
+  usersThatFavorList favoriteActors[]
+}
+
+model watch_actor_relation {
+  id          Int    @id @default(autoincrement())
+  watch       watch  @relation(fields: [watchTMDBID], references: [TMDB_ID])
+  watchTMDBID Int
+  actor       actor  @relation(fields: [actorTMDBID], references: [TMDB_ID])
+  actorTMDBID Int
+  character   String
+
+  @@unique([watchTMDBID, actorTMDBID])
+}
+
+model favoriteWatch {
+  id          Int       @id @default(autoincrement())
+  user        user      @relation(fields: [userID], references: [id])
+  userID      Int
+  watch       watch     @relation(fields: [watchTMDBID], references: [TMDB_ID])
+  watchTMDBID Int
+  created_at  DateTime? @default(now())
+
+  @@unique([userID, watchTMDBID])
+}
+
+model favoriteActors {
+  id          Int       @id @default(autoincrement())
+  user        user      @relation(fields: [userID], references: [id])
+  userID      Int
+  actor       actor     @relation(fields: [actorTMDBID], references: [TMDB_ID])
+  actorTMDBID Int
+  created_at  DateTime? @default(now())
+
+  @@unique([userID, actorTMDBID])
+}
+
+model followSuggestions {
+  id          Int  @id @default(autoincrement())
+  user        user @relation("suggestedTo", fields: [userID], references: [id])
+  userID      Int
+  suggested   user @relation("suggested", fields: [suggestedID], references: [id])
+  suggestedID Int
+
+  @@unique([userID, suggestedID])
+}
+
+model genres {
+  id      Int     @id @default(autoincrement())
+  name    String
+  TMDB_ID Int     @unique
+  shows   watch[]
 }

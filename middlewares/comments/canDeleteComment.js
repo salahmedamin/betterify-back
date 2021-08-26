@@ -2,13 +2,26 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient()
 module.exports = async ({commentID, deleterID}) => {
-    const isCommentWriter = await prisma.comment.findFirst({
+    const canDelete = await prisma.comment.findFirst({
         where:{
             id: commentID,
-            writer:{
-                id: deleterID
-            }
+            OR:[
+                {
+                    writer:{
+                        id: deleterID
+                    }
+                },
+                {
+                    post:{
+                        owner:{
+                            id: deleterID
+                        }
+                    }
+                }
+            ],
+            isDeleted: false,
+            isDeletedBySystem: false
         }
     })
-    return isCommentWriter ? true : false
+    return canDelete ? true: false
 }

@@ -1,4 +1,4 @@
 module.exports = {
-    nicknameExists: require("./nicknames/nicknameExists"),
+    getNickname: require("./nicknames/getNickname"),
     set: require("./nicknames/set")
 }

@@ -5,7 +5,9 @@ module.exports = async ({ commentID, index = 0 }) => {
     const res = await prisma.edits.findMany({
         where: {
             comment: {
-                id: commentID
+                id: commentID,
+                isDeleted: false,
+                isDeletedBySystem: false
             }
         },
         orderBy:{
@@ -14,5 +16,5 @@ module.exports = async ({ commentID, index = 0 }) => {
         take:20,
         skip:index*20
     })
-    return res||false
+    return res
 }

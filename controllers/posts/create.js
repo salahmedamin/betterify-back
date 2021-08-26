@@ -1,5 +1,7 @@
 const { PrismaClient } = require("@prisma/client")
 const getURLS = require("../../functions/getURLS")
+const groupValid = require("../groups/check/isGroupValid")
+const generateSelect = require("./generateSelect")
 const process_media = require("./media/process_media")
 
 const prisma = new PrismaClient()
@@ -21,7 +23,30 @@ module.exports = async ({
     toBeIncludedInPrivacy = []
 }) => {
 
-
+    if(groupID){
+        const isGroupValid = await groupValid({groupID})
+        if(!isGroupValid) return {
+            error: true,
+            message: "This group is unavailable"
+        }
+        const isMember = await prisma.groups_join_requests.findFirst({
+            where:{
+                group:{
+                    id: groupID,
+                    isDeleted: false
+                },
+                member:{
+                    id: userID
+                },
+                isPending: false,
+                isDeleted: false
+            }
+        })
+        if(!isMember) return {
+            error: true,
+            message: "You are not a member in this group"
+        }
+    }
     const hasURL = content && getURLS(content)?.length > 0
     const hasTaggedPerson = taggedPersons?.length > 0
     const res = await prisma.post.create({
@@ -31,12 +56,12 @@ module.exports = async ({
                     id: userID
                 }
             },
-            onlyFollowers,
-            onlyFollowersAndFollowed,
-            usersThatCanSee: {
+            onlyFollowers: groupID ? false : onlyFollowers,
+            onlyFollowersAndFollowed:groupID ? false : onlyFollowers,
+            usersThatCanSee: !groupID ? {
                 connect: toBeIncludedInPrivacy
-            },
-            privacyType,
+            } : undefined ,
+            privacyType: !groupID ? privacyType : undefined,
             isShareable,
             isReactable,
             isCommentable,
@@ -116,122 +141,57 @@ module.exports = async ({
             }
         },
         select: {
-            content: true,
-            hasFile: true,
-            hasImage: true,
-            hasTaggedPerson: true,
-            hasURL: true,
-            hasVideo: true,
-            isVocal: true,
-            created_at: true,
-            isCommentable: true,
-            isReactable: true,
-            isShareable: true,
-            onlyFollowers: true,
-            onlyFollowersAndFollowed: true,
-            privacyType: true,
-            id: true,
-            tags: {
-                select: {
-                    hashtag: true,
+            ...generateSelect({viewerID: userID})
+        }
+    })
+    const done = await process_media({ postID: res.id, files: files, groupID })
+    if(done.error) return done
+    const createdActivity = await prisma.user_activity.create({
+        data:{
+            post:{
+                connect:{
+                    id: res.id
                 }
             },
-            activities: {
-                select: {
-                    with: {
-                        select: {
-                            username: true,
-                        }
-                    },
-                    actName: {
-                        select:{
-                            id: true,
-                            name:true,
-                            thumbnail: true
-                        }
-                    },
-                    complimentary_relation:{
-                        select:{
-                            complimentary:{
-                                select:{
-                                    id: true,
-                                    text: true,
-                                    thumbnail: true,
-                                }
-                            },
-                        }
-                    }
-                }
-            },
-            place: {
-                select: {
-                    name: true
-                }
-            },
-            tagged_persons: {
-                select: {
-                    tagged: {
-                        select: {
-                            username: true
-                        }
-                    },
-                }
-            },
-            urls: {
-                select: {
-                    URL: true,
+            user:{
+                connect:{
+                    id: userID
                 }
             }
         }
     })
-    const done = await process_media({ postID: res.id, files: files, groupID })
-    return done
-        &&
-        await prisma.user_activity.create({
-            data:{
-                post:{
-                    connect:{
-                        id: res.id
-                    }
-                },
-                user:{
-                    connect:{
-                        id: userID
-                    }
-                }
+    if(!done){
+        await prisma.post.delete({
+            where:{
+                id: postID
             }
         })
-        && {
+        return {
+            error: true,
+            message: "An internal error occured"
+        }
+    }
+    return createdActivity
+        ? {
         ...res,
         urls: res.urls.map(a=>a.URL),
         activities: undefined,
         activity: {
-            name: res.activities.actName,
-            with: res.activities.with,
-            complimentary: res.activities.complimentary_relation.map(a=>({
-                text: a.complimentary.text,
-                thumbnail: a.complimentary.thumbnail,
-                id: a.complimentary.id
+            name: res.activities?.actName,
+            with: res.activities?.with,
+            complimentary: res.activities?.complimentary_relation?.map(a=>({
+                text: a.complimentary?.text,
+                thumbnail: a.complimentary?.thumbnail,
+                id: a.complimentary?.id
             }))
         },
         multimedia: await prisma.multimedia.findMany({
-            where: {
-                post: {
+            where:{
+                post:{
                     id: res.id
-                },
-            },
-            include:{
-                faces:{
-                    include:{
-                        person:{
-                            select:{
-                                username:true,
-                                profilePic: true,
-                            }
-                        }
-                    }
                 }
-            }
+            },
+            take: 4,
         })
-    } || { error: true }
+    } : { error: true }
 }

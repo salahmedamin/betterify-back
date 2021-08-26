@@ -5,7 +5,8 @@ module.exports = async ({ groupID, index=0, selectMemberID = false, selectAll = 
     const res = await prisma.groups_join_requests.findMany({
         where:{
             group:{
-                id: groupID
+                id: groupID,
+                isDeleted: false
             },
             isPending: false,
             isDeleted: false,

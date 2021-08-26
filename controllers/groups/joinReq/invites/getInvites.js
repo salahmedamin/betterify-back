@@ -7,9 +7,13 @@ module.exports = async ({ invitedID,index=0 }) => {
             member:{
                 id: invitedID
             },
+            group:{
+                isDeleted: false
+            },
             isPending: false,
             isInvite: true,
-            invitedAcceptedInvite: false
+            invitedAcceptedInvite: false,
+            isDeleted: false
         },
         take:15,
         skip:index*15

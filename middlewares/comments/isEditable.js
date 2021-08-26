@@ -7,7 +7,9 @@ module.exports = async ({ commentID, editorID }) => {
             id: commentID,
             writer:{
                 id: editorID
-            }
+            },
+            isDeleted: false,
+            isDeletedBySystem: false
         }
     })
     return isEditable ? (

@@ -1,19 +1,17 @@
-const { PrismaClient } = require("@prisma/client")
+const reject = require("./follow/reject")
+const accept = require("./follow/accept")
+const send = require("./follow/send")
+const unfollow = require("./follow/unfollow")
+const getFollowRequests = require("./follow/getFollowRequests")
+const getFollowers = require("./follow/getFollowers")
+const getFollowing = require("./follow/getFollowing")
 
-
-const prisma = new PrismaClient()
-module.exports = async ({ userID, followedID }) => {
-    const res = await prisma.user.update({
-        where:{
-            id: userID
-        },
-        data:{
-            follows:{
-                connect:{
-                    id: followedID
-                }
-            }
-        }
-    })
-    return res ? true : false
+module.exports = {
+    reject,
+    send,
+    unfollow,
+    accept,
+    getFollowRequests,
+    getFollowing,
+    getFollowers
 }

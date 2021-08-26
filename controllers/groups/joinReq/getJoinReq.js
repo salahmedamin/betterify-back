@@ -4,8 +4,15 @@ const prisma = new PrismaClient()
 module.exports = async ({ groupID, userID,index=0 }) => {
     const res = await prisma.groups_join_requests.findMany({
         where:{
+            OR:[
+                {
+                    isInvite: true,
+                    invitedAcceptedInvite: true
+                }
+            ],
             group:{
                 id: groupID,
+                isDeleted: false,
                 roles:{
                     some:{
                         OR:[
@@ -32,6 +39,7 @@ module.exports = async ({ groupID, userID,index=0 }) => {
                     }
                 }
             },
+            isDeleted: false,
             isPending: true
         },
         take:15,

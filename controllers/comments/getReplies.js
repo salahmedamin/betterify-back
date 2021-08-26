@@ -4,7 +4,9 @@ const prisma = new PrismaClient()
 module.exports = async ({ commentID, index = 0 }) => {
     const res = await prisma.comment.findFirst({
         where:{
-            id: commentID
+            id: commentID,
+            isDeleted: false,
+            isDeletedBySystem: false
         },
         include:{
             replies:{
@@ -17,5 +19,5 @@ module.exports = async ({ commentID, index = 0 }) => {
         take: 15
     })
 
-    return res.replies||false
+    return res.replies
 }

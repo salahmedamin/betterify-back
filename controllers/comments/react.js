@@ -5,7 +5,9 @@ const prisma = new PrismaClient()
 module.exports = async ({ commentID, reactorID, emoji }) => {
     const res = await prisma.comment.update({
         where: {
-            id: commentID
+            id: commentID,
+            isDeleted: false,
+            isDeletedBySystem: false
         },
         data: {
             reactions: {

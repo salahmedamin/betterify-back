@@ -3,11 +3,35 @@ const getHighestReact = require("../comments/getHighestReact")
 
 const prisma = new PrismaClient()
 module.exports = async ({ postID, userID, order = "date", orderType="desc", index = 0 }) => {
+    const inGroup = await prisma.groups.findFirst({
+        where:{
+            posts:{
+                some:{
+                    id: postID
+                }
+            }
+        }
+    })
     const res = await prisma.comment.findMany({
         where: {
             post: {
-                id: postID
-            }
+                id: postID,
+                isDeleted: false,
+                isDeletedBySystem: false,
+                group: inGroup ? {
+                    id: inGroup.id,
+                    isDeleted: false,
+                    members:{
+                        some:{
+                            member:{
+                                id: userID
+                            }
+                        }
+                    }
+                } : undefined
+            },
+            isDeleted: false,
+            isDeletedBySystem: false
         },
         orderBy: {
             created_at: order == "date" ? orderType : undefined,
@@ -44,8 +68,8 @@ module.exports = async ({ postID, userID, order = "date", orderType="desc", inde
 
     const stuffed = res.map(a=>({
         ...a,
-        tagged: a.personsTagged.tagged.map(e=>e.username),
-        isEdited: a.edits.length>0,
+        tagged: a.personsTagged?.tagged?.map(e=>e.username),
+        isEdited: a.edits?.length>0,
         personsTagged: undefined,
         currentReact: a.reactions
     }))
