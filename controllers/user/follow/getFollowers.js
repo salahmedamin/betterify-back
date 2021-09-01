@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client")
 
 
 const prisma = new PrismaClient()
-module.exports = async ({ userID, index=0, orderBy = 'time', order = 'desc', keyword = undefined }) => {
+module.exports = async ({ userID, index=0, orderBy = 'time', order = 'desc', keyword = undefined, selectAll = false }) => {
     const data = await prisma.user.findMany({
         where:{
             follows:{
@@ -10,27 +10,27 @@ module.exports = async ({ userID, index=0, orderBy = 'time', order = 'desc', key
                     followed:{
                         id: userID
                     },
-                    follower: keyword ? {
+                    follower: !selectAll ? (keyword ? {
                         username:{
                             startsWith: keyword
                         }
-                    } : undefined
+                    } : undefined) : undefined
                 }
             }
         },
         select:{
             id: true,
-            username: true,
-            profilePic: true,
-            firstName: true,
-            lastName: true,
+            username: !selectAll,
+            profilePic: !selectAll,
+            firstName: !selectAll,
+            lastName: !selectAll,
         },
-        orderBy: !keyword ? {
+        orderBy: !selectAll ? (!keyword ? {
             username: orderBy == 'username' ? order : undefined,
             created_at: orderBy == 'time' ? order : undefined,
-        } : undefined,
-        skip: index * 40,
-        take: 40
+        } : undefined) : undefined,
+        skip: !selectAll ? (index * 40) : undefined,
+        take: !selectAll ? 40 : undefined
     })
     
     return data ??  {

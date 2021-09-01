@@ -1,14 +1,24 @@
-const getMembers = require("./groups/members"),
+const getMembers = require("./groups/getMembers"),
 joinGroupManager = require("./groups/joinReq"),
+invitesManager = require("./groups/invites"),
 nicknames = require("./groups/nicknames"),
 getGroup = require("./groups/getGroup"),
 create = require("./groups/create"),
-rolesManager = require("./groups/setRoles")
+edit = require("./groups/edit"),
+getUserGroups = require("./groups/getUserGroups"),
+kick = require("./groups/kickMember"),
+_delete = require("./groups/delete"),
+rolesManager = require("./groups/roles")
 module.exports = {
     getMembers,
-    joinGroupManager,
     nicknames,
     getGroup,
     create,
-    rolesManager
+    edit,
+    _delete,
+    getUserGroups,
+    kick,
+    rolesManager,
+    joinGroupManager,
+    invitesManager,
 }

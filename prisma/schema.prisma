@@ -27,6 +27,18 @@ model rating {
   @@unique([raterID, ratedID])
 }
 
+model name_change {
+  id         Int       @id @default(autoincrement())
+  user       user?     @relation(fields: [userID], references: [id])
+  userID     Int?
+  group      groups?   @relation(fields: [groupID], references: [id])
+  groupID    Int?
+  name       String
+  created_at DateTime? @default(now())
+
+  @@unique([userID, groupID, name])
+}
+
 model user {
   id                            Int                      @id @default(autoincrement())
   username                      String                   @unique
@@ -35,6 +47,8 @@ model user {
   profilePic                    String
   firstName                     String
   lastName                      String
+  //USERNAMES LIST (IN CASE CHANGED)
+  usernames_list                name_change[]
   //CAN SEX BE REVEALED
   revealSex                     Boolean                  @default(false)
   revealEmail                   Boolean                  @default(false)
@@ -105,13 +119,19 @@ model user {
   //Muting others and being muted
   muter                         muting[]                 @relation("muter")
   muted                         muting[]                 @relation("muted")
+  //LIVES IN
+  currentlyIn                   place?                   @relation("CurrentLocation", fields: [livesInPlaceID], references: [id])
+  livesInPlaceID                Int?
+  //COMES FROM
+  cameFrom                      place?                   @relation("OriginLocation", fields: [comesFromPlaceID], references: [id])
+  comesFromPlaceID              Int?
 
-  postsVisibleTo    post[]              @relation("users_visibility")
-  postsAlreadySeen  post[]              @relation("posts_already_seen")
-  favoriteWatch     favoriteWatch[]
-  favoriteActors    favoriteActors[]
-  userSuggestedTo   followSuggestions[] @relation("suggestedTo")
-  followSuggestions followSuggestions[] @relation("suggested")
+  postsVisibleTo     post[]               @relation("users_visibility")
+  favoriteWatch      favoriteWatch[]
+  favoriteActors     favoriteActors[]
+  userSuggestedTo    followSuggestions[]  @relation("suggestedTo")
+  followSuggestions  followSuggestions[]  @relation("suggested")
+  posts_already_seen posts_already_seen[]
 }
 
 model notification_list {
@@ -119,9 +139,13 @@ model notification_list {
   user          user                  @relation(fields: [userID], references: [id])
   userID        Int
   notifications single_notification[]
+
+  @@unique([userID])
 }
 
 enum notif_type {
+  ////simple
+  simple
   ///////follow
   follow_plus
   follow_minus
@@ -209,18 +233,24 @@ model single_notification {
   fromComment          comment?              @relation(fields: [commentID], references: [id])
   commentID            Int?
   isSeen               Boolean               @default(false)
+  isHidden             Boolean               @default(false)
   text                 String
   redirectTo           String
+
+
+  updated_at DateTime? @updatedAt
+  created_at DateTime? @default(now())
 }
 
 model tags_preferences {
-  id     Int   @id @default(autoincrement())
-  tag    tag   @relation(fields: [tagID], references: [id])
-  tagID  Int
-  user   user  @relation(fields: [userID], references: [id])
-  userID Int
-  score  Float
+  id      Int   @id @default(autoincrement())
+  hashtag tag   @relation(fields: [tagID], references: [id])
+  tagID   Int
+  user    user  @relation(fields: [userID], references: [id])
+  userID  Int
+  score   Float
 
+  //modified in an obscure way til now xD
   @@unique([tagID, userID])
 }
 
@@ -294,6 +324,16 @@ enum activities {
   //follow
   user_follow
   user_visit
+  user_edit_name
+  user_edit_picture
+  user_edit_current_location
+  user_edit_origin_location
+  //security
+  user_edit_pass
+  user_edit_email
+  //security
+  user_rate
+  user_unrate
   //story reply
   user_story_reply
   user_story_react
@@ -305,9 +345,11 @@ enum activities {
   //groups (not chat)
   group_add
   group_delete
+  group_edit_name
+  group_edit_picture
+  group_edit_privacy
   group_join
   group_quit
-  group_add_member
   group_delete_member
   group_set_role
   group_accept_join_request
@@ -322,27 +364,34 @@ enum activities {
   group_chat_set_role
   //posts
   post_add
+  post_comment
   post_react
   post_share
+  post_edit
   post_delete
+  post_seen
   //commments
-  comment_add
   comment_edit
   comment_delete
   comment_react
+  comment_reply
   //commment replies
-  comment_reply_add
   comment_reply_edit
   comment_reply_delete
   comment_reply_react
-  //conversations with users/groups
-  conversation_delete
-  conversation_mute
-  conversation_start
+  //actors
+  actor_add //favorites
+  actor_delete //from favorites
+  //shows
+  show_add //favorites
+  show_delete //from favorites
   //search
   search_all
   search_users
   search_groups
+  search_shows
+  search_actors
+  search_places
   search_posts
 }
 
@@ -394,7 +443,7 @@ model message {
   hasImage           Boolean                 @default(false)
   hasFile            Boolean                 @default(false)
   hasVideo           Boolean                 @default(false)
-  isVocal            Boolean                 @default(false)
+  hasVocal           Boolean                 @default(false)
   hasEdits           Boolean                 @default(false)
   message_multimedia multimedia[]
   //URLs
@@ -473,19 +522,23 @@ model groups {
   chatListsGroupIsIn          chat_list[]
   mutingList                  muting[]
 
+  //if changed name, this is a list
+  names_list name_change[]
+
   @@index([creatorID])
 }
 
-enum taken_actions_against_in_groups {
+enum doubtedContent {
   nudity
-  guns
-  crosswords
+  weapon
+  hate
+  gore
 }
 
 model group_strictness_disallowed {
-  id      Int                             @id @default(autoincrement())
-  subject taken_actions_against_in_groups
-  group   groups?                         @relation(fields: [groupID], references: [id])
+  id      Int            @id @default(autoincrement())
+  subject doubtedContent
+  group   groups?        @relation(fields: [groupID], references: [id])
   groupID Int
 
   @@unique([groupID, subject])
@@ -560,19 +613,41 @@ enum message_multimedia_type {
   file
 }
 
+model doubted_media_content {
+  id      Int            @id @default(autoincrement())
+  type    doubtedContent
+  media   multimedia?    @relation(fields: [mediaID], references: [id])
+  mediaID Int
+}
+
 model multimedia {
-  id        Int                     @id @default(autoincrement())
-  unique    String
-  message   message?                @relation(fields: [messageID], references: [id])
-  messageID Int?
-  post      post?                   @relation(fields: [postID], references: [id])
-  postID    Int?
-  comment   comment?                @relation(fields: [commentID], references: [id])
-  commentID Int?
-  type      message_multimedia_type
-  faces     faces_in_photos[]
-  reactions reaction[]
-  tags      tag[]
+  id             Int                     @id @default(autoincrement())
+  unique         String?
+  message        message?                @relation(fields: [messageID], references: [id])
+  messageID      Int?
+  post           post?                   @relation(fields: [postID], references: [id])
+  postID         Int?
+  comment        comment?                @relation(fields: [commentID], references: [id])
+  commentID      Int?
+  type           message_multimedia_type
+  faces          faces_in_photos[]
+  reactions      reaction[]
+  tags           tag[]
+  doubtedContent doubted_media_content[]
+  duration       Float
+
+  video_qualities video_qualities[]
+  @@index([unique])
+}
+
+model video_qualities {
+  id        Int        @id @default(autoincrement())
+  video     multimedia @relation(fields: [mediaID], references: [id])
+  mediaID   Int
+  videoHash String
+  quality   String
+
+  @@unique([mediaID, quality])
 }
 
 model faces_in_photos {
@@ -652,7 +727,7 @@ model post {
   hasImage                 Boolean                 @default(false)
   hasFile                  Boolean                 @default(false)
   hasVideo                 Boolean                 @default(false)
-  isVocal                  Boolean                 @default(false)
+  hasVocal                 Boolean                 @default(false)
   hasEdits                 Boolean                 @default(false)
   multimedia               multimedia[]
   urls                     urls[]
@@ -672,7 +747,7 @@ model post {
   user_activity user_activity[]
 
   //users who have already seen this post
-  alreadySeen user[] @relation("posts_already_seen")
+  alreadySeen posts_already_seen[]
 
   //is it shareable ? commentable ? reactable ?
   isShareable   Boolean @default(true)
@@ -680,6 +755,17 @@ model post {
   isReactable   Boolean @default(true)
 
   @@index([originalID])
+}
+
+model posts_already_seen {
+  id         Int      @id @default(autoincrement())
+  post       post     @relation(fields: [postID], references: [id])
+  postID     Int
+  user       user     @relation(fields: [userID], references: [id])
+  userID     Int
+  created_at DateTime @default(now())
+
+  @@unique([postID, userID])
 }
 
 enum post_privacy_type {
@@ -701,14 +787,13 @@ model activity_name {
   name               String     @unique
   activities         activity[]
   thumbnail          String?
-  requiresCompliment Boolean    @default(false)
+  requiresCompliment Boolean    @default(true)
 }
 
 model activity_complimentary {
   id                Int                            @id @default(autoincrement())
   activity_relation activity_comp_to_name_unique[]
   text              String                         @unique
-  thumbnail         String?
 }
 
 model activity_comp_to_name_unique {
@@ -722,9 +807,11 @@ model activity_comp_to_name_unique {
 }
 
 model place {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  posts post[]
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  posts       post[]
+  currentlyIn user[] @relation("CurrentLocation")
+  cameFrom    user[] @relation("OriginLocation")
 }
 
 model tag {
@@ -736,6 +823,9 @@ model tag {
   mediaID          Int?
   score            Float
   tags_preferences tags_preferences[]
+
+  @@unique([hashtag,postID])
+  @@unique([hashtag,mediaID])
 }
 
 //COMMENTS
@@ -762,7 +852,7 @@ model comment {
   hasImage              Boolean                 @default(false)
   hasFile               Boolean                 @default(false)
   hasVideo              Boolean                 @default(false)
-  isVocal               Boolean                 @default(false)
+  hasVocal              Boolean                 @default(false)
   hasEdits              Boolean                 @default(false)
   multimedia            multimedia[]
   urls                  urls[]

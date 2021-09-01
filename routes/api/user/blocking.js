@@ -11,6 +11,6 @@ router.post("/block", action.block)
 router.post("/unblock", action.unblock)
 
 //get
-router.post("/list", get.list)
+router.post("/", get.list)
 
 module.exports = router

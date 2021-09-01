@@ -5,6 +5,7 @@ const unfollow = require("./follow/unfollow")
 const getFollowRequests = require("./follow/getFollowRequests")
 const getFollowers = require("./follow/getFollowers")
 const getFollowing = require("./follow/getFollowing")
+const deletefollow = require("./follow/deletefollow")
 
 module.exports = {
     reject,
@@ -13,5 +14,6 @@ module.exports = {
     accept,
     getFollowRequests,
     getFollowing,
-    getFollowers
+    getFollowers,
+    deletefollow
 }

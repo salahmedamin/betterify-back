@@ -20,14 +20,14 @@ FROM
       diff,
       isDeletedBySystem,
       isDeleted,
-      (
-        SELECT * 
-        FROM _posts_already_seen 
+      (CASE WHEN EXISTS(
+        SELECT *
+        FROM posts_already_seen 
         WHERE 
-          A = ${postID}
+          postID = ${postID}
           AND
-          B = ${userID}
-      ) isSeen
+          userID = ${userID}
+      ) THEN 1 ELSE 0 END) alreadySeen
     FROM 
       (
         SELECT 
@@ -89,31 +89,7 @@ FROM
       ) a
   ) post 
 WHERE 
-  (
-    post.groupID IS NULL
-    OR
-    (
-      (SELECT isDeleted FROM groups WHERE id = post.groupID) = 0
-      AND
-      (
-        (SELECT isPublic FROM groups WHERE id = post.groupID) = 1)
-        OR
-        EXISTS (
-          SELECT * 
-          FROM groups_join_requests 
-          WHERE 
-            memberID = ${userID} 
-            AND
-            groupID = post.groupID
-            AND
-            isPending = 0
-            AND
-            isDeleted = 0
-        )
-      )
-    )
-  )
-  AND
+  post.groupID IS NULL
   AND
   post.isDeleted = 0
   AND
@@ -207,11 +183,11 @@ WHERE
           ub.blockedID = post.ownerID 
           AND ub.blockerID = ${userID}
         )
-    ) END
-    ORDER BY isSeen ASC
-  )
+    ) END )
+  ORDER BY alreadySeen ASC
   LIMIT ${index * 20},20
     `
+    if(res.length == 0) return []
   let all = []
   for (const r of res) {
     const post = await prisma.post.findFirst({
@@ -227,7 +203,8 @@ WHERE
       ...post,
       activityID: undefined,
       placeID: undefined,
-      groupID: undefined
+      groupID: undefined,
+      diff: undefined
     }
     all = [
       ...all,

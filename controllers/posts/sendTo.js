@@ -110,7 +110,7 @@ module.exports = async ({ senderID, postID, receiverID = undefined, groupID = un
             hasFile: hasOneOnly && type == "file",
             hasImage: hasOneOnly && type == "image",
             hasVideo: hasOneOnly && type == "video",
-            isVocal: hasOneOnly && type == "audio",
+            hasVocal: hasOneOnly && type == "audio",
             group: groupID ? {
                 connect: {
                     id: groupID

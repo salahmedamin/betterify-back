@@ -12,7 +12,7 @@ router.post("/edit", action.edit)
 router.post("/delete", action._delete)
 
 //get
-router.post("/list", get.list)
-router.post("/search", get.search)
+router.post("/", get.list) //get user hobbies
+router.post("/search", get.search) //search in general
 
 module.exports = router

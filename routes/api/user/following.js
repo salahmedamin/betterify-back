@@ -13,10 +13,11 @@ router.post("/follow", action.sendFollow)
 router.post("/unfollow", action.unFollow)
 router.post("/reject", action.rejectFollow)
 router.post("/accept", action.acceptFollow)
+router.post("/deletefollow", action.deletefollow)
 
 //get
-router.post("/getFollowRequests", get.followRequests)
-router.post("/viewFollowing", get.following)
-router.post("/viewFollowers", get.followers)
+router.post("/followRequests", get.followRequests)
+router.post("/following", get.following)
+router.post("/followers", get.followers)
 
 module.exports = router

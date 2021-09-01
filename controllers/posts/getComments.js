@@ -1,6 +1,21 @@
 const { PrismaClient } = require("@prisma/client")
 const getHighestReact = require("../comments/getHighestReact")
 
+/*create a new SQL command to be able to sort using 
+    "newest", 
+    "most replied to", 
+    (
+        "most reacted to"
+        and if this selected
+        "most emojis"
+    )
+*/
+
+/*
+    ability to search in comments
+    
+*/
+
 const prisma = new PrismaClient()
 module.exports = async ({ postID, userID, order = "date", orderType="desc", index = 0 }) => {
     const inGroup = await prisma.groups.findFirst({

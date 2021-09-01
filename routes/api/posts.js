@@ -17,30 +17,7 @@ const getReacts = require("./posts/get/reacts")
 const searchReacts = require("./posts/get/searchReacts")
 const getPost = require("./posts/get/post")
 const getSimilar = require("./posts/get/similar")
-
-
-
-//MULTER
-const multer = require("multer")
-const makeid = length=>{
-    var result           = '';
-    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for ( var i = 0; i < length; i++ ) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-   }
-   return result;
-}
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads')   
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '_' + makeid(13)+"."+file.mimetype.split("/")[1])      
-    }
-})
-const upload = multer({ storage: storage });
-//MULTER
+const upload = require("../../multer")
 
 
 
@@ -57,6 +34,7 @@ router.post("/send", send)
 router.post("/share", share)
 router.post("/delete", _delete)
 router.post("/react", react)
+//router.post("/markSeen", markSeen)
 
 
 
@@ -69,5 +47,6 @@ router.post("/getFeedPosts", getFeedPosts)
 router.post("/getProfilePosts", getProfilePosts)
 router.post("/getSimilar", getSimilar)
 router.post("/searchReacts", searchReacts)
+//router.post("/getProfileSharedPosts", getProfileSharedPosts)
 
 module.exports = router

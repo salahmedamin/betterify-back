@@ -9,7 +9,6 @@ module.exports = (text, key, iv) => {
 
     }
     catch (e) {
-        console.log(e.message)
         return { error: true,message: e.message }
     }
 }

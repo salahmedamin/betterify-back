@@ -4,7 +4,8 @@ const hobbiesRouter = require("./user/hobbies")
 const actorsRouter = require("./user/actors")
 const showsRouter = require("./user/shows")
 const bioRouter = require("./user/bio")
-
+const ratingRouter = require("./user/rating")
+const editRouter = require("./user/edit")
 
 
 //simple task
@@ -22,5 +23,7 @@ router.use("/hobbies", hobbiesRouter)
 router.use("/actors", actorsRouter)
 router.use("/shows", showsRouter)
 router.use("/bio", bioRouter)
+router.use("/rating", ratingRouter)
+router.use("/edit", editRouter)
 
 module.exports = router

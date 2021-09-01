@@ -12,6 +12,6 @@ router.post("/edit", action.edit)
 router.post("/delete", action._delete)
 
 //get
-router.post("/list", get)
+router.post("/", get)
 
 module.exports = router

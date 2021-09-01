@@ -45,11 +45,15 @@ module.exports = async ({
         select:{
             originalPost:{
                 select:{
-                    id: true
+                    id: true,
+                    hasVideo: true,
+                    hasFile: true,
+                    hasImage: true,
+                    hasVocal: true
                 }
             }
         }
-    }))?.originalPost?.id
+    }))?.originalPost
     const urls = getURLS(content)
     const hasURL = content && urls.length > 0
     const hasTaggedPerson = taggedPersons?.length > 0
@@ -77,9 +81,13 @@ module.exports = async ({
             posts: {
                 create: {
                     isShared: true,
+                    hasVideo: isPostAlreadyShared?.hasVideo || data.hasVideo,
+                    hasFile: isPostAlreadyShared?.hasFile || data.hasFile,
+                    hasImage: isPostAlreadyShared?.hasImage || data.hasVhasImageideo,
+                    hasVocal: isPostAlreadyShared?.hasVocal || data.hasVocal,
                     originalPost: {
                         connect:{
-                            id: isPostAlreadyShared || postID
+                            id: isPostAlreadyShared?.id || postID
                         }
                     },
                     content,
@@ -98,10 +106,8 @@ module.exports = async ({
                     activities: activity ? {
                         create: {
                             actName: {
-                                connectOrCreate: {
-                                    where: {
-                                        name: activity?.name
-                                    }
+                                connect: {
+                                    name: activity?.name
                                 }
                             },
                             complimentary_relation: activity?.complimentary ? {
@@ -112,8 +118,7 @@ module.exports = async ({
                                                 text: activity?.complimentary?.name
                                             },
                                             create: {
-                                                text: activity?.complimentary?.name,
-                                                thumbnail: activity?.complimentary?.thumbnail
+                                                text: activity?.complimentary?.name
                                             }
                                         }
                                     }

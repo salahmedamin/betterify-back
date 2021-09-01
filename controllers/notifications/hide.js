@@ -1,29 +1,24 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient()
 
-module.exports = async ({ notifID }) => {
-    const res = await prisma.notification_list.update({
+module.exports = async ({ userID, notifID }) => {
+    const isOwner = await prisma.single_notification.findFirst({
         where:{
-            id: (
-                await prisma.single_notification.findFirst({
-                    where:{
-                        id:notifID
-                    },
-                    select:{
-                        list:{
-                            select:{
-                                id: true
-                            }
-                        }
-                    }
+            id: notifID,
+            list:{
+                user:{
+                    id: userID
                 }
-            )).list.id
-        },
-        data:{
-            notifications:{
-                disconnect:[{id: notifID}]
             }
         }
     })
+    const res = isOwner ? await prisma.single_notification.update({
+        where:{
+            id: notifID
+        },
+        data:{
+            isHidden: true
+        }
+    }) : undefined
     return res ? {success:true} : {error:true}
 }

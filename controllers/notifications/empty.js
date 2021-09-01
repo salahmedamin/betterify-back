@@ -4,24 +4,15 @@ const prisma = new PrismaClient()
 module.exports = async ({ userID }) => {
     const res = await prisma.notification_list.update({
         where:{
-            id: (
-                await prisma.user.findFirst({
-                    where:{
-                        id:userID
-                    },
-                    select:{
-                        notifications:{
-                            select:{
-                                id: userID
-                            }
-                        }
-                    }
-                }
-            )).notifications.id
+            userID
         },
         data:{
             notifications:{
-                set:[]
+                updateMany:{
+                    data:{
+                        isHidden: true
+                    }
+                }
             }
         }
     })

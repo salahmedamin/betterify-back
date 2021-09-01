@@ -2,9 +2,11 @@ const express = require("express")
 const cors = require("cors")
 const bodyParser = require("body-parser")
 const app = express()
-// const helmet = require("helmet")
-
 const PORT = 5000
+
+//add consider following user when watching video for more than 1 minute
+
+// const helmet = require("helmet")
 
 // app.use(helmet({
 //   frameguard: {
@@ -28,7 +30,13 @@ const PORT = 5000
 
 //importing router
 const apiRouter = require("./routes/api")
-const { PrismaClient } = require("@prisma/client")
+// const { PrismaClient } = require("@prisma/client")
+const multer = require("./multer")
+// const imgur = require("./controllers/multimedia/imgur")
+// const FormData = require("form-data")
+// const { default: got } = require("got/dist/source")
+// const { default: axios } = require("axios")
+const dtube = require("./controllers/multimedia/dtube")
 
 
 app.use(cors({
@@ -42,70 +50,21 @@ BigInt.prototype.toJSON = function () {
   return this.toString()
 }
 
-app.get("/xx", async(req, res) => {
-  const prisma = new PrismaClient()
-  res.send(await prisma.$transaction([
-    {
-      name: "Listening to",
-      requiredComp: true
-    },
-    {
-      name: "Playing",
-      requiredComp: false
-    },
-    {
-      name: "Attending",
-      requiredComp: true
-    },
-    {
-      name: "Watching",
-      requiredComp: true
-    },
-    {
-      name: "Eating",
-      requiredComp: true
-    },
-    {
-      name: "Drinking",
-      requiredComp: true
-    },
-    {
-      name: "Celebrating",
-      requiredComp: false
-    },
-    {
-      name: "Reading",
-      requiredComp: false
-    },
-    {
-      name: "Searching for",
-      requiredComp: true
-    },
-    {
-      name: "Traveling to",
-      requiredComp: true
-    },
-    {
-      name: "Supporting",
-      requiredComp: true
-    },
-    {
-      name: "Thinking about",
-      requiredComp: true
-    }
-  ]
-    .map(a => prisma.activity_name.create({
-      data: {
-        name: a.name,
-        thumbnail: a.name.toLowerCase().replace(" ", "_") + ".png"
-      }
-    })
-    )
-  )
-  )
+app.post("/dtube", multer.single('files'), async (req, res) => {
+  res.send(await dtube({
+    file: req.file
+  }))
 })
 
-// app.use(apiRouter)
+// app.post("/xx", multer.single('file') , async(req, res) => {
+//     const imgr = await imgur({
+//       // image: req.file,
+//       video: req.file
+//     })
+//     res.send(imgr)
+// })
+
+app.use(apiRouter)
 
 // app.get("/notifType/", async (req, res) => {
 //   try {

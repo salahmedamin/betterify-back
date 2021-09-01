@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client")
 const getURLS = require("../../functions/getURLS")
 const generateWhereCriteria = require("./generateWhereCriteria")
-const process_media = require("./media/process_media")
+const process_media = require("../multimedia/process_media")
 
 const prisma = new PrismaClient()
 module.exports = async ({
@@ -34,7 +34,7 @@ module.exports = async ({
     })
 
     const hasFile = files.find(a => a.type == "file")
-    const isVocal = files.find(a => a.type == "audio")
+    const hasVocal = files.find(a => a.type == "audio")
     const hasImage = files.find(a => a.type == "image")
     const hasVideo = files.find(a => a.type == "video")
     const hasURL = content && getURLS(content).length > 0
@@ -52,7 +52,7 @@ module.exports = async ({
             },
             content,
             hasFile,
-            isVocal,
+            hasVocal,
             hasImage,
             hasURL,
             hasVideo,
@@ -63,7 +63,7 @@ module.exports = async ({
                     skipDuplicates: true
                 }
             } : undefined,
-            multimedia: (hasFile || hasImage || hasVideo || isVocal) ? {
+            multimedia: (hasFile || hasImage || hasVideo || hasVocal) ? {
                 createMany: {
                     data: files.map(a => ({ unique: a.id, type: a.type })),
                     skipDuplicates: false
@@ -79,7 +79,7 @@ module.exports = async ({
                             id: userID
                         }
                     },
-                    activity: "comment_add",
+                    activity: "post_comment",
                 }
             }
         },

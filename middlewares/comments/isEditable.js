@@ -19,7 +19,7 @@ module.exports = async ({ commentID, editorID }) => {
             isEditable.hasImage,
             isEditable.hasTaggedPerson,
             isEditable.hasURL,
-            isEditable.isVocal,
+            isEditable.hasVocal,
         ]
         .every(
             a=>a==false

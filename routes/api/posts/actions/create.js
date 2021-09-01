@@ -40,7 +40,8 @@ module.exports = async(req,res)=>{
     catch(e){
         res.send({
             error: true,
-            message: e.message
+            message: e.message,
+            stack: e.stack
         })
     }
     

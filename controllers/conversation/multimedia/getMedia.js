@@ -1,0 +1,8 @@
+/* 
+    choose to get
+        IMAGES ONLY
+        or
+        VIDEO ONLY
+        or
+        BOTH
+*/

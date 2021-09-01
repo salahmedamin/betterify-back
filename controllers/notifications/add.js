@@ -68,52 +68,56 @@ module.exports = async ({
         })) return false
     }
 
-    await prisma.single_notification.create({
-        data:{
-            redirectTo: link,
-            fromGroup:groupID ? {
+    const params = {
+        redirectTo: link,
+        fromGroup:groupID ? {
+            connect:{
+                id: groupID
+            }
+        } : undefined,
+        fromGroupJoinRequest:groupID && joinReqID ? {
+            connect:{
+                id: joinReqID
+            }
+        }: undefined,
+        fromComment: commentID ? {
+            connect:{
+                id: commentID
+            }
+        } : undefined,
+        fromPerson:username ? {
+            connect:{
+                username
+            }
+        } : undefined,
+        fromPost:postID ? {
+            connect:{
+                id: postID
+            }
+        } : undefined,
+        text: notif.text,
+        type: notif.type,
+        isSeen: false,
+    }
+
+    const ok = await prisma.notification_list.upsert({
+        where:{
+            userID
+        },
+        create:{
+            user:{
                 connect:{
-                    id: groupID
-                }
-            } : undefined,
-            fromGroupJoinRequest:groupID && joinReqID ? {
-                connect:{
-                    id: joinReqID
-                }
-            }: undefined,
-            fromComment: commentID ? {
-                connect:{
-                    id: commentID
-                }
-            } : undefined,
-            fromPerson:username ? {
-                connect:{
-                    username
-                }
-            } : undefined,
-            fromPost:postID ? {
-                connect:{
-                    id: postID
-                }
-            } : undefined,
-            text: notif.text,
-            type: notif.type,
-            isSeen: false,
-            list:{
-                connectOrCreate:{
-                    where:{
-                        id:(await prisma.notification_list.findFirst({where:{user:{id:userID}}}))?.id || -1
-                    },
-                    create:{
-                        user:{
-                            connect:{
-                                id: userID
-                            }
-                        }
-                    }
+                    id: userID
                 }
             },
+            notifications:{
+                create: params
+            }
+        },
+        update:{
+            notifications:{
+                create: params
+            }
         }
     })
-
 }

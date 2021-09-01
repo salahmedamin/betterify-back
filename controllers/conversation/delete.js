@@ -22,6 +22,14 @@ module.exports = async ({ userID, groupID = undefined, otherID = undefined }) =>
         },
         data:{
             messages:{
+                updateMany:{
+                    where:{
+                        isDeleted: false
+                    },
+                    data:{
+                        isDeleted: true
+                    }
+                },
                 set: []
             }
         }

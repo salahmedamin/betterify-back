@@ -1,10 +1,11 @@
 const { PrismaClient } = require("@prisma/client")
 
 const prisma = new PrismaClient()
-module.exports = async ({ unique, userID }) => {
+module.exports = async ({ unique = undefined, groupID = undefined, userID }) => {
     const res = await prisma.groups.findFirst({
         where: {
             unique,
+            groupID,
             OR: [
                 {
                     isPublic: false,
@@ -47,5 +48,20 @@ module.exports = async ({ unique, userID }) => {
             group_strictness_disallowed: true
         }
     })
-    return res || {error:true}
+    return res ? {
+        ...res,
+        membersCount: (await prisma.groups_join_requests.aggregate({
+            _count:{
+                _all: true
+            },
+            where:{
+                group:{
+                    id: groupID,
+                    unique,
+                },
+                isPending: false,
+                isDeleted: false
+            }
+        }))
+    } : {error:true}
 }

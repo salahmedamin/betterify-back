@@ -1,13 +1,13 @@
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient()
-module.exports = async ({actID, complimentary}) => {
-    if(!(actID && complimentary)) return {
+module.exports = async ({actID = undefined, actName = undefined, complimentary}) => {
+    if(!((actID || actName) && complimentary)) return {
         error: true
     }
     const res = await prisma.activity_name.update({
         where:{
-            id:actID 
+            name: actName
         },
         data: {
             activities:{

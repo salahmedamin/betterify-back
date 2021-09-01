@@ -21,7 +21,6 @@ module.exports = ({
                     complimentary: {
                         select: {
                             text: true,
-                            thumbnail: true,
                             id: true
                         }
                     }
@@ -31,7 +30,9 @@ module.exports = ({
     },
     alreadySeen: {
         where: {
-            id: viewerID
+            user:{
+                id: viewerID
+            }
         },
         take: 1
     },
@@ -45,7 +46,7 @@ module.exports = ({
     isReactable: true,
     isShared: true,
     isShareable: true,
-    isVocal: true,
+    hasVocal: true,
     edits: {
         select: {
             text: true
@@ -76,6 +77,8 @@ module.exports = ({
 
                 }
             },
+            isDeleted: true,
+            isDeletedBySystem: true,
             content: true,
             multimedia: {
                 include: {
@@ -90,6 +93,12 @@ module.exports = ({
                                     username: true
                                 }
                             },
+                        }
+                    },
+                    video_qualities:{
+                        select:{
+                            videoHash: true,
+                            quality: true
                         }
                     }
                 },
@@ -126,6 +135,12 @@ module.exports = ({
         select: {
             unique: true,
             type: true,
+            video_qualities:{
+                select:{
+                    videoHash: true,
+                    quality: true
+                }
+            }
         }
     },
     privacyType: true,

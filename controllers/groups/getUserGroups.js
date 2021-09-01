@@ -1,10 +1,10 @@
 const { PrismaClient } = require("@prisma/client")
 
 const prisma = new PrismaClient()
-module.exports = async ({ userID, chatGroupsOnly = false, index = 0, selectAll = false }) => {
+module.exports = async ({ userID, chatGroupsOnly = false, createdOnly = false, index = 0, selectAll = false }) => {
     const res = await prisma.groups.findMany({
         where:{
-            members:{
+            members:!createdOnly ? {
                 some:{
                     isDeleted: false,
                     isPending: false,
@@ -12,7 +12,10 @@ module.exports = async ({ userID, chatGroupsOnly = false, index = 0, selectAll =
                         id: userID
                     }
                 }
-            },
+            } : undefined,
+            creator:createdOnly ? {
+                id: userID
+            } : undefined,
             isChatGroup: chatGroupsOnly,
             isDeleted: false
         },

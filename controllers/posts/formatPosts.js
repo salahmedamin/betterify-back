@@ -1,7 +1,9 @@
 const getPostHighestReact = require("./getPostHighestReact")
 const getReactionsCount = require("./getReactionsCount")
+const getSeenCount = require("./getSeenCount")
+const getSharedCount = require("./getSharedCount")
 
-module.exports = async({ postsArray = [], singlePost = undefined }) => {
+module.exports = async ({ postsArray = [], singlePost = undefined }) => {
     if (singlePost) {
         let post = {
             ...singlePost,
@@ -32,7 +34,9 @@ module.exports = async({ postsArray = [], singlePost = undefined }) => {
             },
             reactions: undefined,
             tags: singlePost?.tags.map(a => a.hashtag),
-            urls: singlePost?.urls.map(a => a.URL)
+            urls: singlePost?.urls.map(a => a.URL),
+            sharedCount: singlePost?.isShared ? await getSharedCount({ postID: singlePost?.id }) : undefined,
+            viewCount: await getSeenCount({ postID: singlePost?.id })
         }
         return post
     }
@@ -71,9 +75,11 @@ module.exports = async({ postsArray = [], singlePost = undefined }) => {
                 },
                 reactions: undefined,
                 tags: posts[i]?.tags.map(a => a.hashtag),
-                urls: posts[i]?.urls.map(a => a.URL)
+                urls: posts[i]?.urls.map(a => a.URL),
+                sharedCount: posts[i]?.isShared ? await getSharedCount({ postID: posts[i]?.id }) : undefined,
+                viewCount: await getSeenCount({ postID: posts[i]?.id })
             }
         }
-        return posts
+        return posts||[]
     }
 }

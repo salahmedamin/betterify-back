@@ -36,7 +36,6 @@ module.exports = async ({ userID, unfollowedID }) => {
         }
     })
     if(!theFollow) return { error: true }
-    console.log(theFollow.follower.activities)
     const res = await prisma.user.update({
         where:{
             id: userID

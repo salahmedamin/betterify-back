@@ -3,10 +3,7 @@ const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 module.exports = async ({
     postID,
-    image = undefined,
-    video = undefined,
-    audio = undefined,
-    file = undefined
+    type = []
 }) => {
     const res = await prisma.multimedia.findMany({
         where: {
@@ -15,30 +12,45 @@ module.exports = async ({
                 isDeleted: false,
                 isDeletedBySystem: false
             },
-            type: (audio || video || file || image) ? {
-                in: [
-                    (image ? "image" : undefined),
-                    (audio ? "audio" : undefined),
-                    (video ? "video" : undefined),
-                    (file ? "file" : undefined)
-                ]
-                    .map(a => a !== undefined)
-            } : undefined,
-            select: {
-                unique,
-                type,
-                faces: {
-                    select: {
-                        height: true,
-                        width: true,
-                        top: true,
-                        left: true,
-                        person: {
-                            select: {
-                                username: true
-                            }
+            type: {
+                in: type
+            },
+        },
+        select: {
+            unique: true,
+            type: true,
+            faces: {
+                select: {
+                    height: true,
+                    width: true,
+                    top: true,
+                    left: true,
+                    person: {
+                        select: {
+                            username: true
                         }
                     }
+                }
+            },
+            doubtedContent: {
+                select:{
+                    type: true
+                }
+            },
+            duration: true,
+            tags: {
+                select:{
+                    hashtag: true,
+                },
+                orderBy: {
+                    score: "desc"
+                },
+                take: 5
+            },
+            video_qualities: {
+                select:{
+                    quality: true,
+                    videoHash: true
                 }
             }
         }

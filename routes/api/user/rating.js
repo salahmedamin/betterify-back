@@ -11,6 +11,6 @@ router.post("/rate", action.rate)
 router.post("/canBeRated", action.setCanRate)
 
 //get
-router.post("/ratings", get.getRatingList)
+router.post("/all", get.getRatingList)
 
 module.exports = router

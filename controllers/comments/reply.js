@@ -23,7 +23,7 @@ module.exports = async ({ commentID, replierID, text }) => {
                             user:{
                                 id: replierID
                             },
-                            activity: "comment_reply_add"
+                            activity: "comment_reply"
                         }
                     }
                 }
