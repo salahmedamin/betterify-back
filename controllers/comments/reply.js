@@ -3,6 +3,16 @@ const { PrismaClient } = require("@prisma/client")
 
 const prisma = new PrismaClient()
 module.exports = async ({ commentID, replierID, text }) => {
+    const notReply = await prisma.comment.findFirst({
+        where:{
+            id: commentID,
+            replyToID: null
+        }
+    })
+    if(!notReply) return {
+        error: true,
+        message:"Can't reply to a comment which is a reply already"
+    }
     const res = await prisma.comment.update({
         where: {
             id: commentID,

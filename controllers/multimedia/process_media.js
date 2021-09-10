@@ -50,7 +50,6 @@ module.exports = async ({
                         :
                         undefined
 
-            console.log(duration)
 
             if (!types.includes(type)) types.push(type)
 

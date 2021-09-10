@@ -44,11 +44,7 @@ module.exports = async ({ postID, userID }) => {
                     }
                 }
             }
-        }) ? {
-            success: true
-        } : {
-            error: true
-        }
+        })
     }
     catch (e) {
         return {

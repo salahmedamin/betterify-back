@@ -10,11 +10,11 @@ const router = require("express").Router()
 router.post("/favorite", action.favoriteToggle)
 
 //get
-router.post("/getActors", get.getActors)
-router.post("/getRecommendations", get.getRecommendations)
-router.post("/getShow", get.getShow)
-router.post("/getSimilar", get.getSimilar)
-router.post("/getVideos", get.getVideos)
+router.post("/actors", get.getActors)
+router.post("/recommendations", get.getRecommendations)
+router.post("/", get.getShow)
+router.post("/similar", get.getSimilar)
+router.post("/videos", get.getVideos)
 router.post("/search", get.search)
 
 module.exports = router

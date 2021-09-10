@@ -42,9 +42,9 @@ model name_change {
 model user {
   id                            Int                      @id @default(autoincrement())
   username                      String                   @unique
-  email                         String                   @unique
+  email                         String?                  @unique
   password                      String
-  profilePic                    String
+  profilePic                    String?
   firstName                     String
   lastName                      String
   //USERNAMES LIST (IN CASE CHANGED)
@@ -824,8 +824,8 @@ model tag {
   score            Float
   tags_preferences tags_preferences[]
 
-  @@unique([hashtag,postID])
-  @@unique([hashtag,mediaID])
+  @@unique([hashtag, postID])
+  @@unique([hashtag, mediaID])
 }
 
 //COMMENTS

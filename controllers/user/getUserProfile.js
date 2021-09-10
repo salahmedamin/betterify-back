@@ -1,7 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const checkBlock = require("../blocking/checkBlock");
 const notifications = require("../notifications");
-const getProfilePosts = require("../posts/getProfilePosts");
 const getCommonFollowers = require("./profile/getCommonFollowers");
 const getCommonFollowing = require("./profile/getCommonFollowing");
 const getFollowersCount = require("./profile/getFollowersCount");

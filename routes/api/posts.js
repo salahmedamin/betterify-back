@@ -7,6 +7,7 @@ const editPrivacy = require("./posts/actions/editPrivacy")
 const send = require("./posts/actions/send")
 const share = require("./posts/actions/share")
 const react = require("./posts/actions/react")
+const markSeen = require("./posts/actions/markSeen")
 
 //get
 const getComments = require("./posts/get/comments")
@@ -28,24 +29,24 @@ const router = require("express").Router()
 //actions
 router.post("/create", upload.array('file'), create)
 router.post("/comment", upload.array('file'), comment)
-router.post("/editContent", editContent)
-router.post("/editPrivacy", editPrivacy)
+router.post("/edit/content", editContent)
+router.post("/edit/privacy", editPrivacy)
 router.post("/send", send)
 router.post("/share", share)
 router.post("/delete", _delete)
 router.post("/react", react)
-//router.post("/markSeen", markSeen)
+router.post("/markSeen", markSeen)
 
 
 
 //get
-router.post("/getPost", getPost)
-router.post("/getPostMedia", getPostMedia)
-router.post("/getComments", getComments)
-router.post("/getReacts", getReacts)
-router.post("/getFeedPosts", getFeedPosts)
-router.post("/getProfilePosts", getProfilePosts)
-router.post("/getSimilar", getSimilar)
+router.post("/", getPost)
+router.post("/postMedia", getPostMedia)
+router.post("/comments", getComments)
+router.post("/reacts", getReacts)
+router.post("/feedPosts", getFeedPosts)
+router.post("/profilePosts", getProfilePosts)
+router.post("/similar", getSimilar)
 router.post("/searchReacts", searchReacts)
 //router.post("/getProfileSharedPosts", getProfileSharedPosts)
 

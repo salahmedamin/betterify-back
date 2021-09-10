@@ -16,8 +16,8 @@ router.post("/accept", action.acceptFollow)
 router.post("/deletefollow", action.deletefollow)
 
 //get
-router.post("/followRequests", get.followRequests)
-router.post("/following", get.following)
+router.post("/requests", get.followRequests)
+router.post("/", get.following)
 router.post("/followers", get.followers)
 
 module.exports = router

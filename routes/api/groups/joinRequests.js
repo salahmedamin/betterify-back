@@ -1,11 +1,16 @@
 const router = require("express").Router()
 
+const accept = require("./joinRequests/actions/accept"),
+send = require("./joinRequests/actions/send"),
+_delete = require("./joinRequests/actions/delete"),
+get = require("./joinRequests/get/list")
+
 //action
-router.post("/accept", setRole)
-router.post("/send", setRole)
-router.post("/delete", deleteRole)
+router.post("/accept", accept)
+router.post("/send", send)
+router.post("/delete", _delete)
 
 //get
-router.post("/", getRoles)
+router.post("/", get)
 
 module.exports = router

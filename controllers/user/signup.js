@@ -23,10 +23,10 @@ module.exports = async ({
         error: true,
         message: "Email or username already exists"
     }
-    const age = calcAge(birthDate)
+    const age = calcAge(new Date(birthDate))
     const result = await prisma.user.create({
         data: {
-            birthDate: birthDate.getTime(),
+            birthDate: new Date(birthDate).getTime(),
             firstName,
             lastName,
             password,
@@ -52,11 +52,5 @@ module.exports = async ({
                 "gt_60"
         }
     })
-    return result ? {
-        success: true,
-    }
-        :
-        {
-            error: true
-        }
+    return result
 }

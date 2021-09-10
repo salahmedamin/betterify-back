@@ -8,9 +8,9 @@ const router = require("express").Router()
 
 //action
 router.post("/rate", action.rate)
-router.post("/canBeRated", action.setCanRate)
+router.post("/switch", action.setCanRate)
 
 //get
-router.post("/all", get.getRatingList)
+router.post("/", get.getRatingList)
 
 module.exports = router

@@ -7,7 +7,8 @@ module.exports = async (req, res) => {
             userID,
             index,
             order,
-            orderType
+            orderBy,
+            replyToID
         } = req.body
 
         res.send(await posts.getComments({
@@ -15,7 +16,8 @@ module.exports = async (req, res) => {
             userID,
             index,
             order,
-            orderType
+            orderBy,
+            replyToID
         }))
     }
     catch (e) {

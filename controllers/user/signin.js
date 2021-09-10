@@ -22,5 +22,5 @@ module.exports = async({
             theme_color: true,
         }
     })
-    return result ?? { error:true }
+    return result
 }

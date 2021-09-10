@@ -1,7 +1,16 @@
 const { PrismaClient } = require("@prisma/client")
+const isMember = require("./check/isMember")
 
 const prisma = new PrismaClient()
-module.exports = async ({ groupID, index=0, selectMemberID = false, selectAll = false }) => {
+module.exports = async ({ userID, groupID, index=0, selectMemberID = false, selectAll = false }) => {
+
+    //check if requester is a member
+    const isMember = await isMember({groupID,userID})
+    if(!isMember) return {
+        error: true,
+        message: "Must be a group member to see all members"
+    }
+
     const res = await prisma.groups_join_requests.findMany({
         where:{
             group:{
@@ -17,6 +26,9 @@ module.exports = async ({ groupID, index=0, selectMemberID = false, selectAll = 
                     id: true
                 }
             }
+        } : undefined,
+        orderBy: !selectAll ? {
+            created_at: "desc"
         } : undefined,
         take: selectAll ? undefined : 30,
         skip: selectAll ? undefined : index*30

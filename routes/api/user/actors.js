@@ -10,8 +10,8 @@ const router = require("express").Router()
 router.post("/favorite", action.favoriteToggle)
 
 //get
-router.post("/getActor", get.getActor)
-router.post("/getShows", get.getShows)
+router.post("/", get.getActor)
+router.post("/shows", get.getShows)
 router.post("/search", get.search)
 
 module.exports = router

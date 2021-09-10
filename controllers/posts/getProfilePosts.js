@@ -3,7 +3,7 @@ const formatPosts = require("./formatPosts")
 const generateSelect = require("./generateSelect")
 const generateWhereCriteria = require("./generateWhereCriteria")
 const prisma = new PrismaClient()
-module.exports = async({userID, viewerID, index = 0})=>{
+module.exports = async({userID, viewerID, sharedOnly = false, ownerOnly = false, index = 0})=>{
     try{
         const posts = await prisma.post.findMany({
                 select:{
@@ -15,7 +15,8 @@ module.exports = async({userID, viewerID, index = 0})=>{
                     ...generateWhereCriteria({viewerID}),
                     owner:{
                         id: userID
-                    }
+                    },
+                    isShared: sharedOnly || ownerOnly
                 }
         })
         return await formatPosts({postsArray:posts})

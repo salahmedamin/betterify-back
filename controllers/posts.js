@@ -16,6 +16,7 @@ const getSinglePost = require("./posts/getSinglePost")
 const searchReacts = require("./posts/searchReacts")
 const getPostMedia = require("./posts/getPostMedia")
 const getReactions = require("./posts/getReactions")
+const markSeen = require("./posts/markSeen")
 
 
 
@@ -37,5 +38,6 @@ module.exports = {
     getProfilePosts,
     searchReacts,
     getPostMedia,
-    getReactions
+    getReactions,
+    markSeen
 }
